@@ -1,0 +1,232 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-check2-square"></i> Unit Testing Dashboard
+                </h2>
+                <a href="/admin" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Admin
+                </a>
+            </div>
+
+            <div class="alert alert-info">
+                <h5 class="alert-heading">
+                    <i class="bi bi-info-circle"></i> About Unit Testing
+                </h5>
+                <p class="mb-0">
+                    Run automated tests to ensure all features work correctly after updates.
+                    Tests check models, routes, and critical workflows to catch bugs before they affect users.
+                </p>
+            </div>
+
+            <!-- Coverage Summary -->
+            <% if (coverage) { %>
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Test Coverage
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="h2 mb-0">
+                                <span class="badge <%= coverage.lines >= 80 ? 'bg-success' : coverage.lines >= 60 ? 'bg-warning' : 'bg-danger' %>">
+                                    <%= coverage.lines.toFixed(1) %>%
+                                </span>
+                            </div>
+                            <p class="text-muted mb-0">Lines</p>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="h2 mb-0">
+                                <span class="badge <%= coverage.statements >= 80 ? 'bg-success' : coverage.statements >= 60 ? 'bg-warning' : 'bg-danger' %>">
+                                    <%= coverage.statements.toFixed(1) %>%
+                                </span>
+                            </div>
+                            <p class="text-muted mb-0">Statements</p>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="h2 mb-0">
+                                <span class="badge <%= coverage.functions >= 80 ? 'bg-success' : coverage.functions >= 60 ? 'bg-warning' : 'bg-danger' %>">
+                                    <%= coverage.functions.toFixed(1) %>%
+                                </span>
+                            </div>
+                            <p class="text-muted mb-0">Functions</p>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="h2 mb-0">
+                                <span class="badge <%= coverage.branches >= 80 ? 'bg-success' : coverage.branches >= 60 ? 'bg-warning' : 'bg-danger' %>">
+                                    <%= coverage.branches.toFixed(1) %>%
+                                </span>
+                            </div>
+                            <p class="text-muted mb-0">Branches</p>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="/admin/tests/coverage" target="_blank" class="btn btn-outline-primary">
+                            <i class="bi bi-file-earmark-code"></i> View Detailed Coverage Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-center h-100">
+                        <div class="card-body">
+                            <i class="bi bi-play-circle display-4 text-success mb-3"></i>
+                            <h5 class="card-title">Run All Tests</h5>
+                            <p class="card-text">Execute complete test suite with coverage</p>
+                            <form action="/admin/tests/run-all" method="POST" onsubmit="showLoading(this)">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-lightning"></i> Run All Tests
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center h-100">
+                        <div class="card-body">
+                            <i class="bi bi-gear display-4 text-primary mb-3"></i>
+                            <h5 class="card-title">Model Tests</h5>
+                            <p class="card-text">Test data models and database operations</p>
+                            <p class="text-muted small"><%= availableTests.models.length %> test suites</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center h-100">
+                        <div class="card-body">
+                            <i class="bi bi-link-45deg display-4 text-info mb-3"></i>
+                            <h5 class="card-title">Integration Tests</h5>
+                            <p class="card-text">Test complete user workflows</p>
+                            <form action="/admin/tests/run-integration" method="POST" onsubmit="showLoading(this)">
+                                <button type="submit" class="btn btn-info">
+                                    <i class="bi bi-play"></i> Run Integration
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Tests -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-database"></i> Model Tests (<%= availableTests.models.length %>)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <% if (availableTests.models.length > 0) { %>
+                    <div class="row">
+                        <% availableTests.models.forEach(model => { %>
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-file-code"></i> <%= model %>
+                                    </h6>
+                                    <form action="/admin/tests/run-model/<%= model %>" method="POST" onsubmit="showLoading(this)">
+                                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                                            <i class="bi bi-play"></i> Run Tests
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <% } else { %>
+                    <p class="text-muted mb-0">No model tests available yet.</p>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Route Tests -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-sign-turn-right"></i> Route Tests (<%= availableTests.routes.length %>)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <% if (availableTests.routes.length > 0) { %>
+                    <div class="row">
+                        <% availableTests.routes.forEach(route => { %>
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="bi bi-arrow-right-square"></i> <%= route %>
+                                    </h6>
+                                    <button class="btn btn-sm btn-outline-primary w-100" disabled>
+                                        Coming Soon
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <% } else { %>
+                    <p class="text-muted mb-0">No route tests available yet.</p>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Integration Tests -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-diagram-3"></i> Integration Tests (<%= availableTests.integration.length %>)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <% if (availableTests.integration.length > 0) { %>
+                    <div class="list-group">
+                        <% availableTests.integration.forEach(test => { %>
+                        <div class="list-group-item">
+                            <i class="bi bi-check-circle"></i> <%= test %>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <% } else { %>
+                    <p class="text-muted mb-0">No integration tests available yet. Run model tests first!</p>
+                    <% } %>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+function showLoading(form) {
+    const button = form.querySelector('button[type="submit"]');
+    const originalText = button.innerHTML;
+
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running tests...';
+
+    // Note: Form will submit, button will be restored on new page load
+    return true;
+}
+</script>
+
+<style>
+.card {
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,209 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <% if (results.success) { %>
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <% } else { %>
+                    <i class="bi bi-x-circle-fill text-danger"></i>
+                    <% } %>
+                    <%= title %>
+                </h2>
+                <div>
+                    <a href="/admin/tests" class="btn btn-primary">
+                        <i class="bi bi-arrow-left"></i> Back to Tests
+                    </a>
+                </div>
+            </div>
+
+            <!-- Summary Card -->
+            <div class="card mb-4 <%= results.success ? 'border-success' : 'border-danger' %>">
+                <div class="card-header <%= results.success ? 'bg-success' : 'bg-danger' %> text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Test Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2">
+                            <div class="h3 mb-0 text-success">
+                                <%= results.summary.numPassedTests || 0 %>
+                            </div>
+                            <p class="text-muted mb-0">Passed</p>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="h3 mb-0 text-danger">
+                                <%= results.summary.numFailedTests || 0 %>
+                            </div>
+                            <p class="text-muted mb-0">Failed</p>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="h3 mb-0 text-warning">
+                                <%= results.summary.numPendingTests || 0 %>
+                            </div>
+                            <p class="text-muted mb-0">Pending</p>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="h3 mb-0 text-info">
+                                <%= results.summary.numTotalTests || 0 %>
+                            </div>
+                            <p class="text-muted mb-0">Total Tests</p>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="h3 mb-0">
+                                <%= results.summary.numPassedTestSuites || 0 %>/<%= results.summary.numTotalTestSuites || 0 %>
+                            </div>
+                            <p class="text-muted mb-0">Test Suites</p>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="h3 mb-0">
+                                <%= results.duration %>
+                            </div>
+                            <p class="text-muted mb-0">Duration</p>
+                        </div>
+                    </div>
+
+                    <% if (results.summary.numTotalTests > 0) { %>
+                    <div class="progress mt-3" style="height: 25px;">
+                        <% const passPercent = (results.summary.numPassedTests / results.summary.numTotalTests * 100).toFixed(1); %>
+                        <% const failPercent = (results.summary.numFailedTests / results.summary.numTotalTests * 100).toFixed(1); %>
+                        <% const pendingPercent = (results.summary.numPendingTests / results.summary.numTotalTests * 100).toFixed(1); %>
+
+                        <div class="progress-bar bg-success" style="width: <%= passPercent %>%">
+                            <%= passPercent %>%
+                        </div>
+                        <% if (results.summary.numFailedTests > 0) { %>
+                        <div class="progress-bar bg-danger" style="width: <%= failPercent %>%">
+                            <%= failPercent %>%
+                        </div>
+                        <% } %>
+                        <% if (results.summary.numPendingTests > 0) { %>
+                        <div class="progress-bar bg-warning" style="width: <%= pendingPercent %>%">
+                            <%= pendingPercent %>%
+                        </div>
+                        <% } %>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Test Suites -->
+            <% if (results.suites && results.suites.length > 0) { %>
+            <% results.suites.forEach((suite, suiteIndex) => { %>
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <% if (suite.status === 'passed') { %>
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <% } else if (suite.status === 'failed') { %>
+                            <i class="bi bi-x-circle-fill text-danger"></i>
+                            <% } else { %>
+                            <i class="bi bi-dash-circle text-warning"></i>
+                            <% } %>
+                            <%= suite.name %>
+                        </h5>
+                        <span class="badge bg-secondary"><%= suite.duration %></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <% if (suite.tests && suite.tests.length > 0) { %>
+                    <div class="accordion" id="suite<%= suiteIndex %>">
+                        <% suite.tests.forEach((test, testIndex) => { %>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button <%= test.status === 'passed' ? 'collapsed' : '' %>"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#test<%= suiteIndex %>_<%= testIndex %>">
+                                    <% if (test.status === 'passed') { %>
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <% } else if (test.status === 'failed') { %>
+                                    <i class="bi bi-x-circle text-danger me-2"></i>
+                                    <% } else { %>
+                                    <i class="bi bi-dash-circle text-warning me-2"></i>
+                                    <% } %>
+                                    <%= test.title %>
+                                    <span class="badge bg-secondary ms-auto"><%= test.duration %></span>
+                                </button>
+                            </h2>
+                            <% if (test.failureMessages && test.failureMessages.length > 0) { %>
+                            <div id="test<%= suiteIndex %>_<%= testIndex %>"
+                                 class="accordion-collapse collapse <%= test.status === 'failed' ? 'show' : '' %>"
+                                 data-bs-parent="#suite<%= suiteIndex %>">
+                                <div class="accordion-body">
+                                    <div class="alert alert-danger">
+                                        <strong>Failure:</strong>
+                                        <% test.failureMessages.forEach(msg => { %>
+                                        <pre class="mb-0 mt-2"><%= msg %></pre>
+                                        <% }); %>
+                                    </div>
+                                </div>
+                            </div>
+                            <% } %>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <% } else { %>
+                    <p class="text-muted mb-0">No test details available</p>
+                    <% } %>
+                </div>
+            </div>
+            <% }); %>
+            <% } else { %>
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                No test results available. The tests may have failed to run.
+            </div>
+            <% } %>
+
+            <!-- Error Display -->
+            <% if (results.error) { %>
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bug"></i> Error Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-dark text-white p-3 rounded"><%= results.error %></pre>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- Actions -->
+            <div class="mt-4 d-flex gap-2">
+                <a href="/admin/tests" class="btn btn-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                <% if (testType === 'all') { %>
+                <form action="/admin/tests/run-all" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-arrow-clockwise"></i> Run Again
+                    </button>
+                </form>
+                <% } else if (testType === 'model' && modelName) { %>
+                <form action="/admin/tests/run-model/<%= modelName %>" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-arrow-clockwise"></i> Run Again
+                    </button>
+                </form>
+                <% } else if (testType === 'integration') { %>
+                <form action="/admin/tests/run-integration" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-arrow-clockwise"></i> Run Again
+                    </button>
+                </form>
+                <% } %>
+                <a href="/admin/tests/coverage" target="_blank" class="btn btn-outline-primary">
+                    <i class="bi bi-file-earmark-code"></i> View Coverage Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

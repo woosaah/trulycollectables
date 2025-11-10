@@ -7,6 +7,7 @@ const Figurine = require('../models/Figurine');
 const Order = require('../models/Order');
 const Inquiry = require('../models/Inquiry');
 const CsvImport = require('../models/CsvImport');
+const TestRunner = require('../services/TestRunner');
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
 const path = require('path');
@@ -592,6 +593,112 @@ router.get('/csv-import/history', async (req, res) => {
         res.render('public/error', {
             title: 'Error',
             message: 'Unable to load import history'
+        });
+    }
+});
+
+// === UNIT TESTING & TEST RUNNER ===
+
+// Test dashboard
+router.get('/tests', (req, res) => {
+    try {
+        const availableTests = TestRunner.getAvailableTests();
+        const coverage = TestRunner.getCoverageSummary();
+
+        res.render('admin/test-dashboard', {
+            title: 'Unit Testing Dashboard',
+            availableTests,
+            coverage
+        });
+    } catch (error) {
+        console.error('Test dashboard error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to load test dashboard'
+        });
+    }
+});
+
+// Run all tests
+router.post('/tests/run-all', async (req, res) => {
+    try {
+        const results = await TestRunner.runAllTests();
+        const formatted = TestRunner.formatResults(results);
+
+        res.render('admin/test-results', {
+            title: 'All Tests - Results',
+            results: formatted,
+            testType: 'all'
+        });
+    } catch (error) {
+        console.error('Run all tests error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to run tests: ' + error.message
+        });
+    }
+});
+
+// Run model tests
+router.post('/tests/run-model/:modelName', async (req, res) => {
+    try {
+        const modelName = req.params.modelName;
+        const results = await TestRunner.runModelTests(modelName);
+        const formatted = TestRunner.formatResults(results);
+
+        res.render('admin/test-results', {
+            title: `${modelName} Tests - Results`,
+            results: formatted,
+            testType: 'model',
+            modelName
+        });
+    } catch (error) {
+        console.error('Run model tests error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to run model tests: ' + error.message
+        });
+    }
+});
+
+// Run integration tests
+router.post('/tests/run-integration', async (req, res) => {
+    try {
+        const results = await TestRunner.runIntegrationTests();
+        const formatted = TestRunner.formatResults(results);
+
+        res.render('admin/test-results', {
+            title: 'Integration Tests - Results',
+            results: formatted,
+            testType: 'integration'
+        });
+    } catch (error) {
+        console.error('Run integration tests error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to run integration tests: ' + error.message
+        });
+    }
+});
+
+// Get test coverage report
+router.get('/tests/coverage', (req, res) => {
+    try {
+        const coveragePath = path.join(__dirname, '..', 'coverage', 'lcov-report', 'index.html');
+
+        if (fs.existsSync(coveragePath)) {
+            res.sendFile(coveragePath);
+        } else {
+            res.render('public/error', {
+                title: 'Coverage Not Available',
+                message: 'Please run tests first to generate coverage report'
+            });
+        }
+    } catch (error) {
+        console.error('Coverage report error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to load coverage report'
         });
     }
 });
