@@ -1,0 +1,84 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="mb-4">Edit Collection Item</h2>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="/user/collection/<%= item.id %>/edit" method="POST">
+                        <div class="mb-3">
+                            <label for="card_name" class="form-label">Card Name *</label>
+                            <input type="text" class="form-control" id="card_name" name="card_name"
+                                   value="<%= item.card_name %>" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="set_name" class="form-label">Set Name</label>
+                                <input type="text" class="form-control" id="set_name" name="set_name"
+                                       value="<%= item.set_name || '' %>">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="card_number" class="form-label">Card Number</label>
+                                <input type="text" class="form-control" id="card_number" name="card_number"
+                                       value="<%= item.card_number || '' %>">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="year" class="form-label">Year</label>
+                                <input type="number" class="form-control" id="year" name="year"
+                                       value="<%= item.year || '' %>">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="sport_type" class="form-label">Sport/Type</label>
+                                <select class="form-select" id="sport_type" name="sport_type">
+                                    <option value="">Select...</option>
+                                    <option value="basketball" <%= item.sport_type === 'basketball' ? 'selected' : '' %>>Basketball</option>
+                                    <option value="pokemon" <%= item.sport_type === 'pokemon' ? 'selected' : '' %>>Pokemon</option>
+                                    <option value="magic" <%= item.sport_type === 'magic' ? 'selected' : '' %>>Magic: The Gathering</option>
+                                    <option value="baseball" <%= item.sport_type === 'baseball' ? 'selected' : '' %>>Baseball</option>
+                                    <option value="football" <%= item.sport_type === 'football' ? 'selected' : '' %>>Football</option>
+                                    <option value="other" <%= item.sport_type === 'other' ? 'selected' : '' %>>Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="quantity" class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity"
+                                       value="<%= item.quantity %>" min="1">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label">Status *</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="have" <%= item.status === 'have' ? 'selected' : '' %>>I Have</option>
+                                    <option value="want" <%= item.status === 'want' ? 'selected' : '' %>>I Want</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"><%= item.notes || '' %></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <a href="/user/collection" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

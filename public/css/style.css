@@ -1,0 +1,275 @@
+/* TrulyCollectables Custom Styles */
+
+:root {
+    --primary-color: #6495ED; /* Cornflower Blue */
+    --text-color: #000000; /* Black */
+    --bg-color: #FFFFFF; /* White */
+    --border-color: #dee2e6;
+    --hover-bg: #f8f9fa;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Override Bootstrap primary color */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #5080e6;
+    border-color: #5080e6;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.border-primary {
+    border-color: var(--primary-color) !important;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.navbar-light .navbar-nav .nav-link {
+    color: var(--text-color);
+}
+
+.navbar-light .navbar-nav .nav-link:hover {
+    color: var(--primary-color);
+}
+
+/* Card styles */
+.card {
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(100, 149, 237, 0.15);
+}
+
+.card-img-top {
+    height: 250px;
+    object-fit: cover;
+    background-color: #f8f9fa;
+}
+
+/* Hero section */
+.hero {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #5080e6 100%);
+    color: white;
+    padding: 4rem 0;
+    margin-bottom: 3rem;
+}
+
+.hero h1 {
+    font-weight: 700;
+    font-size: 2.5rem;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 0.25rem;
+    font-weight: 500;
+    padding: 0.5rem 1.5rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 1rem;
+}
+
+/* Forms */
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(100, 149, 237, 0.25);
+}
+
+/* Alert messages */
+.alert {
+    border-radius: 0.25rem;
+}
+
+/* Badge styles */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Product grid */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+/* Price tag */
+.price-tag {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Condition badges */
+.badge-mint {
+    background-color: #28a745;
+}
+
+.badge-near-mint {
+    background-color: #20c997;
+}
+
+.badge-excellent {
+    background-color: #17a2b8;
+}
+
+.badge-good {
+    background-color: #ffc107;
+}
+
+.badge-played {
+    background-color: #6c757d;
+}
+
+/* Order status badges */
+.badge-pending {
+    background-color: #ffc107;
+}
+
+.badge-processing {
+    background-color: #17a2b8;
+}
+
+.badge-shipped {
+    background-color: #007bff;
+}
+
+.badge-completed {
+    background-color: #28a745;
+}
+
+.badge-cancelled {
+    background-color: #dc3545;
+}
+
+/* Table styles */
+.table {
+    background-color: white;
+}
+
+.table thead {
+    background-color: #f8f9fa;
+}
+
+/* Image viewer */
+.product-image-main {
+    max-height: 500px;
+    object-fit: contain;
+    background-color: #f8f9fa;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    padding: 1rem;
+}
+
+/* Filter sidebar */
+.filter-section {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.filter-section h6 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Pagination */
+.pagination .page-link {
+    color: var(--primary-color);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Cart items */
+.cart-item {
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+    background-color: white;
+}
+
+.cart-item img {
+    max-width: 100px;
+    height: 100px;
+    object-fit: cover;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #5080e6 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-card h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2rem;
+    }
+
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .card-img-top {
+        height: 200px;
+    }
+
+    .dashboard-card {
+        padding: 1.5rem;
+    }
+
+    .dashboard-card h3 {
+        font-size: 2rem;
+    }
+}
+
+/* Utility classes */
+.text-muted-custom {
+    color: #6c757d;
+}
+
+.border-bottom-custom {
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

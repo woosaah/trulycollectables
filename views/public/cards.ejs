@@ -1,0 +1,155 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="filter-section">
+                <h5 class="mb-3">Filters</h5>
+                <form action="/cards" method="GET">
+                    <!-- Search -->
+                    <div class="mb-3">
+                        <label class="form-label">Search</label>
+                        <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Card name, set, number...">
+                    </div>
+
+                    <!-- Sport Type -->
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" name="sport_type">
+                            <option value="">All Types</option>
+                            <% sportTypes.forEach(sport => { %>
+                            <option value="<%= sport %>" <%= filters.sport_type === sport ? 'selected' : '' %>><%= sport %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <!-- Set Name -->
+                    <div class="mb-3">
+                        <label class="form-label">Set</label>
+                        <select class="form-select" name="set_name">
+                            <option value="">All Sets</option>
+                            <% sets.forEach(set => { %>
+                            <option value="<%= set %>" <%= filters.set_name === set ? 'selected' : '' %>><%= set %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <!-- Condition -->
+                    <div class="mb-3">
+                        <label class="form-label">Condition</label>
+                        <select class="form-select" name="condition">
+                            <option value="">All Conditions</option>
+                            <option value="mint" <%= filters.condition === 'mint' ? 'selected' : '' %>>Mint</option>
+                            <option value="near_mint" <%= filters.condition === 'near_mint' ? 'selected' : '' %>>Near Mint</option>
+                            <option value="excellent" <%= filters.condition === 'excellent' ? 'selected' : '' %>>Excellent</option>
+                            <option value="good" <%= filters.condition === 'good' ? 'selected' : '' %>>Good</option>
+                            <option value="played" <%= filters.condition === 'played' ? 'selected' : '' %>>Played</option>
+                        </select>
+                    </div>
+
+                    <!-- Price Range -->
+                    <div class="mb-3">
+                        <label class="form-label">Price Range (NZD)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="number" class="form-control" name="min_price" value="<%= filters.min_price || '' %>" placeholder="Min" step="0.01">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control" name="max_price" value="<%= filters.max_price || '' %>" placeholder="Max" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sort -->
+                    <div class="mb-3">
+                        <label class="form-label">Sort By</label>
+                        <select class="form-select" name="sort">
+                            <option value="created_at" <%= filters.sort === 'created_at' ? 'selected' : '' %>>Newest</option>
+                            <option value="price_nzd" <%= filters.sort === 'price_nzd' ? 'selected' : '' %>>Price</option>
+                            <option value="card_name" <%= filters.sort === 'card_name' ? 'selected' : '' %>>Name</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <select class="form-select" name="order">
+                            <option value="desc" <%= filters.order === 'desc' ? 'selected' : '' %>>Descending</option>
+                            <option value="asc" <%= filters.order === 'asc' ? 'selected' : '' %>>Ascending</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mb-2">Apply Filters</button>
+                    <a href="/cards" class="btn btn-outline-secondary w-100">Clear Filters</a>
+                </form>
+            </div>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><%= totalCards %> Cards Found</h2>
+            </div>
+
+            <% if (cards && cards.length > 0) { %>
+            <div class="product-grid">
+                <% cards.forEach(card => { %>
+                <div class="card">
+                    <a href="/cards/<%= card.id %>" class="text-decoration-none">
+                        <% if (card.image_front) { %>
+                        <img src="<%= card.image_front %>" class="card-img-top" alt="<%= card.card_name %>">
+                        <% } else { %>
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light">
+                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                        <% } %>
+                        <div class="card-body">
+                            <h5 class="card-title text-dark"><%= card.card_name %></h5>
+                            <p class="card-text text-muted small mb-2">
+                                <%= card.set_name || 'N/A' %>
+                                <% if (card.year) { %>(<%= card.year %>)<% } %>
+                            </p>
+                            <% if (card.condition) { %>
+                            <span class="badge badge-<%= card.condition.toLowerCase().replace(/[^a-z]/g, '') %> mb-2">
+                                <%= card.condition %>
+                            </span>
+                            <% } %>
+                            <div class="price-tag">NZD $<%= card.price_nzd.toFixed(2) %></div>
+                            <% if (card.quantity > 0) { %>
+                            <p class="text-muted small mb-0"><%= card.quantity %> in stock</p>
+                            <% } else { %>
+                            <p class="text-danger small mb-0">Out of stock</p>
+                            <% } %>
+                        </div>
+                    </a>
+                </div>
+                <% }); %>
+            </div>
+
+            <!-- Pagination -->
+            <% if (totalPages > 1) { %>
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                        <a class="page-link" href="?page=<%= currentPage - 1 %>&<%= new URLSearchParams(filters).toString() %>">Previous</a>
+                    </li>
+                    <% for (let i = 1; i <= totalPages; i++) { %>
+                    <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                        <a class="page-link" href="?page=<%= i %>&<%= new URLSearchParams(filters).toString() %>"><%= i %></a>
+                    </li>
+                    <% } %>
+                    <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                        <a class="page-link" href="?page=<%= currentPage + 1 %>&<%= new URLSearchParams(filters).toString() %>">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            <% } %>
+            <% } else { %>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No cards found matching your criteria.
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

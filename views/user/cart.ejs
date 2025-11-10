@@ -1,0 +1,76 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Shopping Cart</h2>
+
+    <% if (cartItems && cartItems.length > 0) { %>
+    <div class="row">
+        <div class="col-lg-8">
+            <% cartItems.forEach(item => { %>
+            <div class="cart-item">
+                <div class="row align-items-center">
+                    <div class="col-md-2">
+                        <% if (item.card_id) { %>
+                            <img src="<%= item.image_front || '/images/placeholder.png' %>" class="img-fluid" alt="<%= item.card_name %>">
+                        <% } else { %>
+                            <img src="<%= item.image_url || '/images/placeholder.png' %>" class="img-fluid" alt="<%= item.product_name %>">
+                        <% } %>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="mb-1"><%= item.card_name || item.product_name %></h6>
+                        <% if (item.set_name) { %>
+                        <p class="text-muted small mb-0"><%= item.set_name %></p>
+                        <% } %>
+                    </div>
+                    <div class="col-md-2">
+                        <p class="mb-0">NZD $<%= (item.card_price || item.figurine_price).toFixed(2) %></p>
+                    </div>
+                    <div class="col-md-2">
+                        <form action="/user/cart/<%= item.id %>/update" method="POST" class="d-flex">
+                            <input type="number" class="form-control form-control-sm" name="quantity"
+                                   value="<%= item.quantity %>" min="1"
+                                   max="<%= item.card_stock || item.figurine_stock %>"
+                                   onchange="this.form.submit()">
+                        </form>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <form action="/user/cart/<%= item.id %>/remove" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirmDelete('Remove this item from cart?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Order Summary</h5>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Items:</span>
+                        <span><%= cartItems.length %></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total:</strong>
+                        <strong class="text-primary">NZD $<%= total.toFixed(2) %></strong>
+                    </div>
+                    <a href="/user/checkout" class="btn btn-primary w-100">Proceed to Checkout</a>
+                    <a href="/cards" class="btn btn-outline-primary w-100 mt-2">Continue Shopping</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-cart-x"></i> Your cart is empty.
+        <a href="/cards" class="alert-link">Start shopping!</a>
+    </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,56 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Admin Dashboard</h2>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h3><%= pendingOrdersCount %></h3>
+                    <p class="mb-0">Pending Orders</p>
+                    <a href="/admin/orders?status=pending" class="btn btn-light mt-3">View Orders</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3><%= pendingFigurinesCount %></h3>
+                    <p class="mb-0">Pending Figurines</p>
+                    <a href="/admin/figurines" class="btn btn-light mt-3">Review</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3><%= newInquiriesCount %></h3>
+                    <p class="mb-0">New Inquiries</p>
+                    <a href="/admin/inquiries?status=new" class="btn btn-light mt-3">View Inquiries</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Actions</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="/admin/cards" class="btn btn-primary">Manage Cards</a>
+                        <a href="/admin/cards/add" class="btn btn-primary">Add Card</a>
+                        <a href="/admin/orders" class="btn btn-primary">Manage Orders</a>
+                        <a href="/admin/figurines" class="btn btn-primary">Manage Figurines</a>
+                        <a href="/admin/inquiries" class="btn btn-primary">Manage Inquiries</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

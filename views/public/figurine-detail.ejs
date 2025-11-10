@@ -1,0 +1,86 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/figurines">Figurines</a></li>
+            <li class="breadcrumb-item active"><%= figurine.product_name %></li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Image Section -->
+        <div class="col-md-6 mb-4">
+            <% if (figurine.image_url) { %>
+            <img src="<%= figurine.image_url %>" class="img-fluid product-image-main w-100" alt="<%= figurine.product_name %>">
+            <% } else { %>
+            <div class="product-image-main w-100 d-flex align-items-center justify-content-center" style="height: 500px;">
+                <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Details Section -->
+        <div class="col-md-6">
+            <h1 class="mb-3"><%= figurine.product_name %></h1>
+
+            <div class="price-tag mb-4">NZD $<%= figurine.price_nzd.toFixed(2) %></div>
+
+            <% if (figurine.price_aud) { %>
+            <p class="text-muted">AUD $<%= figurine.price_aud.toFixed(2) %></p>
+            <% } %>
+
+            <table class="table table-sm mb-4">
+                <tbody>
+                    <% if (figurine.supplier) { %>
+                    <tr>
+                        <th style="width: 150px;">Supplier:</th>
+                        <td><%= figurine.supplier %></td>
+                    </tr>
+                    <% } %>
+                    <tr>
+                        <th>Availability:</th>
+                        <td>
+                            <% if (figurine.quantity > 0) { %>
+                            <span class="text-success"><i class="bi bi-check-circle"></i> <%= figurine.quantity %> in stock</span>
+                            <% } else { %>
+                            <span class="text-danger"><i class="bi bi-x-circle"></i> Out of stock</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <% if (figurine.description) { %>
+            <div class="mb-4">
+                <h5>Description</h5>
+                <p class="text-muted"><%= figurine.description %></p>
+            </div>
+            <% } %>
+
+            <!-- Action Buttons -->
+            <% if (figurine.quantity > 0) { %>
+            <form action="/user/cart/add" method="POST" class="mb-3">
+                <input type="hidden" name="figurine_id" value="<%= figurine.id %>">
+                <div class="row g-2">
+                    <div class="col-4">
+                        <input type="number" class="form-control" name="quantity" value="1" min="1" max="<%= figurine.quantity %>">
+                    </div>
+                    <div class="col-8">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-cart-plus"></i> Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <% } else { %>
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> This figurine is currently out of stock.
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

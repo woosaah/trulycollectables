@@ -1,0 +1,112 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="mb-4">Add Card</h2>
+
+            <% if (errors && errors.length > 0) { %>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    <% errors.forEach(error => { %>
+                    <li><%= error.msg %></li>
+                    <% }); %>
+                </ul>
+            </div>
+            <% } %>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="/admin/cards/add" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="card_name" class="form-label">Card Name *</label>
+                            <input type="text" class="form-control" id="card_name" name="card_name" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="set_name" class="form-label">Set Name</label>
+                                <input type="text" class="form-control" id="set_name" name="set_name">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="card_number" class="form-label">Card Number</label>
+                                <input type="text" class="form-control" id="card_number" name="card_number">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="year" class="form-label">Year</label>
+                                <input type="number" class="form-control" id="year" name="year">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="sport_type" class="form-label">Sport/Type</label>
+                                <select class="form-select" id="sport_type" name="sport_type">
+                                    <option value="">Select...</option>
+                                    <option value="basketball">Basketball</option>
+                                    <option value="pokemon">Pokemon</option>
+                                    <option value="magic">Magic: The Gathering</option>
+                                    <option value="baseball">Baseball</option>
+                                    <option value="football">Football</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="condition" class="form-label">Condition</label>
+                                <select class="form-select" id="condition" name="condition">
+                                    <option value="">Select...</option>
+                                    <option value="mint">Mint</option>
+                                    <option value="near_mint">Near Mint</option>
+                                    <option value="excellent">Excellent</option>
+                                    <option value="good">Good</option>
+                                    <option value="played">Played</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="price_nzd" class="form-label">Price (NZD) *</label>
+                                <input type="number" class="form-control" id="price_nzd" name="price_nzd"
+                                       step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity *</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity"
+                                   min="1" value="1" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="image_front" class="form-label">Front Image</label>
+                                <input type="file" class="form-control" id="image_front" name="image_front" accept="image/*">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="image_back" class="form-label">Back Image</label>
+                                <input type="file" class="form-control" id="image_back" name="image_back" accept="image/*">
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Add Card</button>
+                            <a href="/admin/cards" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

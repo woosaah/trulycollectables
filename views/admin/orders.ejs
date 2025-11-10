@@ -1,0 +1,70 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Manage Orders</h2>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/admin/orders" method="GET" class="row g-3">
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Search orders...">
+                </div>
+                <div class="col-md-5">
+                    <select class="form-select" name="status">
+                        <option value="">All Status</option>
+                        <option value="pending" <%= filters.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                        <option value="processing" <%= filters.status === 'processing' ? 'selected' : '' %>>Processing</option>
+                        <option value="shipped" <%= filters.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+                        <option value="completed" <%= filters.status === 'completed' ? 'selected' : '' %>>Completed</option>
+                        <option value="cancelled" <%= filters.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <% if (orders && orders.length > 0) { %>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% orders.forEach(order => { %>
+                <tr>
+                    <td><strong><%= order.order_number %></strong></td>
+                    <td><%= order.customer_name %></td>
+                    <td><%= order.customer_email %></td>
+                    <td><%= new Date(order.created_at).toLocaleDateString() %></td>
+                    <td>NZD $<%= order.total_nzd.toFixed(2) %></td>
+                    <td>
+                        <span class="badge badge-<%= order.status %>"><%= order.status %></span>
+                    </td>
+                    <td>
+                        <a href="/admin/orders/<%= order.id %>" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No orders found.
+    </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

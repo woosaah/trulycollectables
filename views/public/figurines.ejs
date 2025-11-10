@@ -1,0 +1,62 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Browse Figurines</h2>
+
+    <% if (figurines && figurines.length > 0) { %>
+    <div class="product-grid">
+        <% figurines.forEach(figurine => { %>
+        <div class="card">
+            <a href="/figurines/<%= figurine.id %>" class="text-decoration-none">
+                <% if (figurine.image_url) { %>
+                <img src="<%= figurine.image_url %>" class="card-img-top" alt="<%= figurine.product_name %>">
+                <% } else { %>
+                <div class="card-img-top d-flex align-items-center justify-content-center bg-light">
+                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                </div>
+                <% } %>
+                <div class="card-body">
+                    <h5 class="card-title text-dark"><%= figurine.product_name %></h5>
+                    <% if (figurine.description) { %>
+                    <p class="card-text text-muted small">
+                        <%= figurine.description.substring(0, 100) %><%= figurine.description.length > 100 ? '...' : '' %>
+                    </p>
+                    <% } %>
+                    <div class="price-tag">NZD $<%= figurine.price_nzd.toFixed(2) %></div>
+                    <% if (figurine.quantity > 0) { %>
+                    <p class="text-muted small mb-0"><%= figurine.quantity %> in stock</p>
+                    <% } else { %>
+                    <p class="text-danger small mb-0">Out of stock</p>
+                    <% } %>
+                </div>
+            </a>
+        </div>
+        <% }); %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage - 1 %>">Previous</a>
+            </li>
+            <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+            </li>
+            <% } %>
+            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage + 1 %>">Next</a>
+            </li>
+        </ul>
+    </nav>
+    <% } %>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No figurines available at the moment.
+    </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,64 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Collection Matcher</h2>
+    <p class="lead">We found <%= matches.length %> cards from your want list in our inventory!</p>
+
+    <% if (matches && matches.length > 0) { %>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Card</th>
+                    <th>Set</th>
+                    <th>Number</th>
+                    <th>Condition</th>
+                    <th>Price</th>
+                    <th>In Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% matches.forEach(match => { %>
+                <tr>
+                    <td>
+                        <strong><%= match.card_name %></strong>
+                    </td>
+                    <td><%= match.set_name || '-' %></td>
+                    <td><%= match.card_number || '-' %></td>
+                    <td>
+                        <% if (match.condition) { %>
+                        <span class="badge badge-<%= match.condition.toLowerCase().replace(/[^a-z]/g, '') %>">
+                            <%= match.condition %>
+                        </span>
+                        <% } %>
+                    </td>
+                    <td>NZD $<%= match.price_nzd.toFixed(2) %></td>
+                    <td><%= match.available_quantity %></td>
+                    <td>
+                        <a href="/cards/<%= match.card_id %>" class="btn btn-sm btn-outline-primary me-1">View</a>
+                        <form action="/user/cart/add" method="POST" class="d-inline">
+                            <input type="hidden" name="card_id" value="<%= match.card_id %>">
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No matches found at the moment. Keep adding to your want list!
+    </div>
+    <% } %>
+
+    <a href="/user/collection?status=want" class="btn btn-outline-primary mt-3">
+        <i class="bi bi-arrow-left"></i> Back to Want List
+    </a>
+</div>
+
+<%- include('../partials/footer') %>

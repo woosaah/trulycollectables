@@ -1,0 +1,80 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Checkout</h2>
+
+    <% if (errors && errors.length > 0) { %>
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            <% errors.forEach(error => { %>
+            <li><%= error.msg %></li>
+            <% }); %>
+        </ul>
+    </div>
+    <% } %>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Shipping Information</h5>
+                    <form action="/user/checkout" method="POST">
+                        <div class="mb-3">
+                            <label for="customer_name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="customer_name" name="customer_name"
+                                   value="<%= formData.customer_name || '' %>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="customer_email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="customer_email" name="customer_email"
+                                   value="<%= formData.customer_email || '' %>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="shipping_address" class="form-label">Shipping Address</label>
+                            <textarea class="form-control" id="shipping_address" name="shipping_address"
+                                      rows="4" required><%= formData.shipping_address || '' %></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Order Notes (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes"
+                                      rows="3" placeholder="Any special instructions..."><%= formData.notes || '' %></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">Place Order</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Order Summary</h5>
+                    <hr>
+                    <% cartItems.forEach(item => { %>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="small">
+                            <%= item.card_name || item.product_name %>
+                            <span class="text-muted">(×<%= item.quantity %>)</span>
+                        </span>
+                        <span class="small">$<%= ((item.card_price || item.figurine_price) * item.quantity).toFixed(2) %></span>
+                    </div>
+                    <% }); %>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total:</strong>
+                        <strong class="text-primary">NZD $<%= total.toFixed(2) %></strong>
+                    </div>
+                    <div class="alert alert-warning mt-3 small">
+                        <i class="bi bi-info-circle"></i> Payment instructions will be sent to your email after placing the order.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

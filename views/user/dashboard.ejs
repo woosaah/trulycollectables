@@ -1,0 +1,91 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Welcome back, <%= user.username %>!</h2>
+
+    <div class="row g-4 mb-4">
+        <!-- Cart -->
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <h3><%= cartCount %></h3>
+                <p class="mb-0">Items in Cart</p>
+                <a href="/user/cart" class="btn btn-light mt-3">View Cart</a>
+            </div>
+        </div>
+
+        <!-- Orders -->
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <h3><%= recentOrders.length %></h3>
+                <p class="mb-0">Total Orders</p>
+                <a href="/user/orders" class="btn btn-light mt-3">View Orders</a>
+            </div>
+        </div>
+
+        <!-- Collection Matches -->
+        <div class="col-md-4">
+            <div class="dashboard-card">
+                <h3><%= matchesCount %></h3>
+                <p class="mb-0">Cards We Have</p>
+                <a href="/user/collection/matches" class="btn btn-light mt-3">View Matches</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Actions</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="/cards" class="btn btn-primary">Browse Cards</a>
+                        <a href="/user/collection" class="btn btn-primary">My Collection</a>
+                        <a href="/user/collection/add" class="btn btn-primary">Add to Collection</a>
+                        <a href="/user/cart" class="btn btn-primary">Shopping Cart</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <% if (recentOrders && recentOrders.length > 0) { %>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Recent Orders</h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% recentOrders.forEach(order => { %>
+                        <tr>
+                            <td><%= order.order_number %></td>
+                            <td><%= new Date(order.created_at).toLocaleDateString() %></td>
+                            <td>NZD $<%= order.total_nzd.toFixed(2) %></td>
+                            <td>
+                                <span class="badge badge-<%= order.status %>"><%= order.status %></span>
+                            </td>
+                            <td>
+                                <a href="/user/orders/<%= order.id %>" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            <a href="/user/orders" class="btn btn-link">View All Orders</a>
+        </div>
+    </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,112 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="mb-4">Edit Card</h2>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="/admin/cards/<%= card.id %>/edit" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="card_name" class="form-label">Card Name *</label>
+                            <input type="text" class="form-control" id="card_name" name="card_name"
+                                   value="<%= card.card_name %>" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="set_name" class="form-label">Set Name</label>
+                                <input type="text" class="form-control" id="set_name" name="set_name"
+                                       value="<%= card.set_name || '' %>">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="card_number" class="form-label">Card Number</label>
+                                <input type="text" class="form-control" id="card_number" name="card_number"
+                                       value="<%= card.card_number || '' %>">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="year" class="form-label">Year</label>
+                                <input type="number" class="form-control" id="year" name="year"
+                                       value="<%= card.year || '' %>">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="sport_type" class="form-label">Sport/Type</label>
+                                <select class="form-select" id="sport_type" name="sport_type">
+                                    <option value="">Select...</option>
+                                    <option value="basketball" <%= card.sport_type === 'basketball' ? 'selected' : '' %>>Basketball</option>
+                                    <option value="pokemon" <%= card.sport_type === 'pokemon' ? 'selected' : '' %>>Pokemon</option>
+                                    <option value="magic" <%= card.sport_type === 'magic' ? 'selected' : '' %>>Magic: The Gathering</option>
+                                    <option value="baseball" <%= card.sport_type === 'baseball' ? 'selected' : '' %>>Baseball</option>
+                                    <option value="football" <%= card.sport_type === 'football' ? 'selected' : '' %>>Football</option>
+                                    <option value="other" <%= card.sport_type === 'other' ? 'selected' : '' %>>Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="condition" class="form-label">Condition</label>
+                                <select class="form-select" id="condition" name="condition">
+                                    <option value="">Select...</option>
+                                    <option value="mint" <%= card.condition === 'mint' ? 'selected' : '' %>>Mint</option>
+                                    <option value="near_mint" <%= card.condition === 'near_mint' ? 'selected' : '' %>>Near Mint</option>
+                                    <option value="excellent" <%= card.condition === 'excellent' ? 'selected' : '' %>>Excellent</option>
+                                    <option value="good" <%= card.condition === 'good' ? 'selected' : '' %>>Good</option>
+                                    <option value="played" <%= card.condition === 'played' ? 'selected' : '' %>>Played</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="price_nzd" class="form-label">Price (NZD) *</label>
+                                <input type="number" class="form-control" id="price_nzd" name="price_nzd"
+                                       step="0.01" min="0" value="<%= card.price_nzd %>" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity *</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity"
+                                   min="0" value="<%= card.quantity %>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"><%= card.description || '' %></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="image_front" class="form-label">Front Image</label>
+                                <% if (card.image_front) { %>
+                                <img src="<%= card.image_front %>" class="img-thumbnail mb-2" style="max-height: 150px;">
+                                <% } %>
+                                <input type="file" class="form-control" id="image_front" name="image_front" accept="image/*">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="image_back" class="form-label">Back Image</label>
+                                <% if (card.image_back) { %>
+                                <img src="<%= card.image_back %>" class="img-thumbnail mb-2" style="max-height: 150px;">
+                                <% } %>
+                                <input type="file" class="form-control" id="image_back" name="image_back" accept="image/*">
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <a href="/admin/cards" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

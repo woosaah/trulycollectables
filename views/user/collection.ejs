@@ -1,0 +1,84 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Collection</h2>
+        <div>
+            <a href="/user/collection/add" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Card
+            </a>
+            <a href="/user/collection/export?status=<%= status %>" class="btn btn-outline-primary">
+                <i class="bi bi-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link <%= status === 'have' ? 'active' : '' %>" href="/user/collection?status=have">
+                Cards I Have
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <%= status === 'want' ? 'active' : '' %>" href="/user/collection?status=want">
+                Cards I Want
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/user/collection/matches">
+                Collection Matcher
+            </a>
+        </li>
+    </ul>
+
+    <% if (collection && collection.length > 0) { %>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Card Name</th>
+                    <th>Set</th>
+                    <th>Number</th>
+                    <th>Year</th>
+                    <th>Type</th>
+                    <th>Qty</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% collection.forEach(item => { %>
+                <tr>
+                    <td><strong><%= item.card_name %></strong></td>
+                    <td><%= item.set_name || '-' %></td>
+                    <td><%= item.card_number || '-' %></td>
+                    <td><%= item.year || '-' %></td>
+                    <td><%= item.sport_type || '-' %></td>
+                    <td><%= item.quantity %></td>
+                    <td class="small text-muted"><%= item.notes || '-' %></td>
+                    <td>
+                        <a href="/user/collection/<%= item.id %>/edit" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="/user/collection/<%= item.id %>/delete" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirmDelete('Delete this card from your collection?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Your <%= status %> list is empty.
+        <a href="/user/collection/add" class="alert-link">Add your first card!</a>
+    </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

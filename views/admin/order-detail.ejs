@@ -1,0 +1,109 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/admin/orders">Orders</a></li>
+            <li class="breadcrumb-item active"><%= order.order_number %></li>
+        </ol>
+    </nav>
+
+    <% if (typeof req !== 'undefined' && req.query.success) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle"></i> Order status updated successfully!
+    </div>
+    <% } %>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Order #<%= order.order_number %></h5>
+                    <p class="text-muted">Placed on <%= new Date(order.created_at).toLocaleString() %></p>
+
+                    <!-- Update Status Form -->
+                    <form action="/admin/orders/<%= order.id %>/status" method="POST" class="mb-4">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <select class="form-select" name="status" required>
+                                    <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                                    <option value="processing" <%= order.status === 'processing' ? 'selected' : '' %>>Processing</option>
+                                    <option value="shipped" <%= order.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
+                                    <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>Completed</option>
+                                    <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary w-100">Update Status</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <h6 class="mt-4 mb-3">Order Items</h6>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% orderItems.forEach(item => { %>
+                                <tr>
+                                    <td>
+                                        <%= item.card_name || item.product_name %>
+                                        <% if (item.set_name) { %>
+                                        <br><small class="text-muted"><%= item.set_name %></small>
+                                        <% } %>
+                                    </td>
+                                    <td>NZD $<%= item.price_nzd.toFixed(2) %></td>
+                                    <td><%= item.quantity %></td>
+                                    <td>NZD $<%= (item.price_nzd * item.quantity).toFixed(2) %></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="3" class="text-end">Total:</th>
+                                    <th>NZD $<%= order.total_nzd.toFixed(2) %></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">Customer Information</h6>
+                    <p class="mb-1"><strong>Name:</strong> <%= order.customer_name %></p>
+                    <p class="mb-0"><strong>Email:</strong> <%= order.customer_email %></p>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">Shipping Address</h6>
+                    <p class="mb-0"><%= order.shipping_address %></p>
+                </div>
+            </div>
+
+            <% if (order.notes) { %>
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Order Notes</h6>
+                    <p class="mb-0"><%= order.notes %></p>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

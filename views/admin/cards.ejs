@@ -1,0 +1,107 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Cards</h2>
+        <a href="/admin/cards/add" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Card
+        </a>
+    </div>
+
+    <% if (typeof req !== 'undefined' && req.query.success) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle"></i> Card <%= req.query.success %>!
+    </div>
+    <% } %>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/admin/cards" method="GET" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Search cards...">
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" name="sport_type">
+                        <option value="">All Types</option>
+                        <% sportTypes.forEach(sport => { %>
+                        <option value="<%= sport %>" <%= filters.sport_type === sport ? 'selected' : '' %>><%= sport %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <% if (cards && cards.length > 0) { %>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Card</th>
+                    <th>Set</th>
+                    <th>Type</th>
+                    <th>Condition</th>
+                    <th>Price</th>
+                    <th>Qty</th>
+                    <th>Available</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% cards.forEach(card => { %>
+                <tr>
+                    <td><strong><%= card.card_name %></strong></td>
+                    <td><%= card.set_name || '-' %></td>
+                    <td><%= card.sport_type || '-' %></td>
+                    <td>
+                        <% if (card.condition) { %>
+                        <span class="badge badge-<%= card.condition.toLowerCase().replace(/[^a-z]/g, '') %>">
+                            <%= card.condition %>
+                        </span>
+                        <% } %>
+                    </td>
+                    <td>$<%= card.price_nzd.toFixed(2) %></td>
+                    <td><%= card.quantity %></td>
+                    <td>
+                        <form action="/admin/cards/<%= card.id %>/toggle-availability" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm <%= card.available ? 'btn-success' : 'btn-secondary' %>">
+                                <%= card.available ? 'Yes' : 'No' %>
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        <a href="/admin/cards/<%= card.id %>/edit" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <form action="/admin/cards/<%= card.id %>/delete" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirmDelete('Delete this card?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+    <% if (totalPages > 1) { %>
+    <nav>
+        <ul class="pagination">
+            <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+            </li>
+            <% } %>
+        </ul>
+    </nav>
+    <% } %>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No cards found.
+    </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

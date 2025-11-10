@@ -1,0 +1,159 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/cards">Cards</a></li>
+            <li class="breadcrumb-item active"><%= card.card_name %></li>
+        </ol>
+    </nav>
+
+    <% if (typeof req !== 'undefined' && req.query.inquiry === 'success') { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle"></i> Your inquiry has been submitted successfully!
+    </div>
+    <% } %>
+
+    <div class="row">
+        <!-- Image Section -->
+        <div class="col-md-6 mb-4">
+            <% if (card.image_front) { %>
+            <img src="<%= card.image_front %>" class="img-fluid product-image-main w-100 mb-3" alt="<%= card.card_name %>">
+            <% } else { %>
+            <div class="product-image-main w-100 d-flex align-items-center justify-content-center" style="height: 500px;">
+                <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
+            </div>
+            <% } %>
+
+            <% if (card.image_back) { %>
+            <div class="row">
+                <div class="col-12">
+                    <p class="text-muted small mb-2">Back Image:</p>
+                    <img src="<%= card.image_back %>" class="img-fluid product-image-main w-100" alt="<%= card.card_name %> back">
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Details Section -->
+        <div class="col-md-6">
+            <h1 class="mb-3"><%= card.card_name %></h1>
+
+            <div class="mb-3">
+                <% if (card.condition) { %>
+                <span class="badge badge-<%= card.condition.toLowerCase().replace(/[^a-z]/g, '') %> me-2">
+                    <%= card.condition %>
+                </span>
+                <% } %>
+                <% if (card.sport_type) { %>
+                <span class="badge bg-secondary"><%= card.sport_type %></span>
+                <% } %>
+            </div>
+
+            <div class="price-tag mb-4">NZD $<%= card.price_nzd.toFixed(2) %></div>
+
+            <table class="table table-sm mb-4">
+                <tbody>
+                    <% if (card.set_name) { %>
+                    <tr>
+                        <th style="width: 150px;">Set:</th>
+                        <td><%= card.set_name %></td>
+                    </tr>
+                    <% } %>
+                    <% if (card.card_number) { %>
+                    <tr>
+                        <th>Card Number:</th>
+                        <td><%= card.card_number %></td>
+                    </tr>
+                    <% } %>
+                    <% if (card.year) { %>
+                    <tr>
+                        <th>Year:</th>
+                        <td><%= card.year %></td>
+                    </tr>
+                    <% } %>
+                    <tr>
+                        <th>Availability:</th>
+                        <td>
+                            <% if (card.quantity > 0) { %>
+                            <span class="text-success"><i class="bi bi-check-circle"></i> <%= card.quantity %> in stock</span>
+                            <% } else { %>
+                            <span class="text-danger"><i class="bi bi-x-circle"></i> Out of stock</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <% if (card.description) { %>
+            <div class="mb-4">
+                <h5>Description</h5>
+                <p class="text-muted"><%= card.description %></p>
+            </div>
+            <% } %>
+
+            <!-- Action Buttons -->
+            <% if (card.quantity > 0) { %>
+            <form action="/user/cart/add" method="POST" class="mb-3">
+                <input type="hidden" name="card_id" value="<%= card.id %>">
+                <div class="row g-2">
+                    <div class="col-4">
+                        <input type="number" class="form-control" name="quantity" value="1" min="1" max="<%= card.quantity %>">
+                    </div>
+                    <div class="col-8">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-cart-plus"></i> Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <% } else { %>
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> This card is currently out of stock.
+            </div>
+            <% } %>
+
+            <!-- Contact About This Card -->
+            <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#inquiryModal">
+                <i class="bi bi-envelope"></i> Contact About This Card
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Inquiry Modal -->
+<div class="modal fade" id="inquiryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/inquiries" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Contact About This Card</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="card_id" value="<%= card.id %>">
+                    <div class="mb-3">
+                        <label class="form-label">Your Message</label>
+                        <textarea class="form-control" name="message" rows="4" required placeholder="Ask about availability, condition, pricing, or anything else..."></textarea>
+                    </div>
+                    <% if (!user) { %>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> You need to <a href="/auth/login">login</a> to submit an inquiry.
+                    </div>
+                    <% } %>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <% if (user) { %>
+                    <button type="submit" class="btn btn-primary">Submit Inquiry</button>
+                    <% } else { %>
+                    <a href="/auth/login" class="btn btn-primary">Login to Submit</a>
+                    <% } %>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

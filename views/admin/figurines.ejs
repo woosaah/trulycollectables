@@ -1,0 +1,110 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Manage Figurines</h2>
+
+    <% if (typeof req !== 'undefined' && req.query.success) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle"></i> Figurine <%= req.query.success %>!
+    </div>
+    <% } %>
+
+    <!-- Pending Approvals -->
+    <% if (pending && pending.length > 0) { %>
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0">Pending Approvals (<%= pending.length %>)</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Supplier</th>
+                            <th>Price AUD</th>
+                            <th>Price NZD</th>
+                            <th>Qty</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% pending.forEach(figurine => { %>
+                        <tr>
+                            <td><strong><%= figurine.product_name %></strong></td>
+                            <td><%= figurine.supplier || '-' %></td>
+                            <td>$<%= figurine.price_aud ? figurine.price_aud.toFixed(2) : '-' %></td>
+                            <td>$<%= figurine.price_nzd.toFixed(2) %></td>
+                            <td><%= figurine.quantity %></td>
+                            <td>
+                                <form action="/admin/figurines/<%= figurine.id %>/approve" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form action="/admin/figurines/<%= figurine.id %>/delete" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirmDelete('Delete this figurine?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- Approved Figurines -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Approved Figurines (<%= approved.length %>)</h5>
+        </div>
+        <div class="card-body">
+            <% if (approved && approved.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Supplier</th>
+                            <th>Price AUD</th>
+                            <th>Price NZD</th>
+                            <th>Qty</th>
+                            <th>Available</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% approved.forEach(figurine => { %>
+                        <tr>
+                            <td><strong><%= figurine.product_name %></strong></td>
+                            <td><%= figurine.supplier || '-' %></td>
+                            <td>$<%= figurine.price_aud ? figurine.price_aud.toFixed(2) : '-' %></td>
+                            <td>$<%= figurine.price_nzd.toFixed(2) %></td>
+                            <td><%= figurine.quantity %></td>
+                            <td>
+                                <span class="badge <%= figurine.available ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= figurine.available ? 'Yes' : 'No' %>
+                                </span>
+                            </td>
+                            <td>
+                                <form action="/admin/figurines/<%= figurine.id %>/delete" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirmDelete('Delete this figurine?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            <% } else { %>
+            <div class="alert alert-info mb-0">
+                <i class="bi bi-info-circle"></i> No approved figurines yet.
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
