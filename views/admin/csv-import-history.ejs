@@ -1,0 +1,122 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>CSV Import History</h2>
+                <a href="/admin/csv-import" class="btn btn-primary">
+                    <i class="bi bi-upload"></i> New Import
+                </a>
+            </div>
+
+            <% if (imports && imports.length > 0) { %>
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Filename</th>
+                                    <th>User</th>
+                                    <th>Total Rows</th>
+                                    <th>Successful</th>
+                                    <th>Failed</th>
+                                    <th>Duplicates</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% imports.forEach(imp => { %>
+                                <tr>
+                                    <td><strong>#<%= imp.id %></strong></td>
+                                    <td><%= imp.filename %></td>
+                                    <td><%= imp.username || 'Unknown' %></td>
+                                    <td><%= imp.total_rows || 0 %></td>
+                                    <td>
+                                        <span class="badge bg-success"><%= imp.successful_rows || 0 %></span>
+                                    </td>
+                                    <td>
+                                        <% if (imp.failed_rows > 0) { %>
+                                        <span class="badge bg-danger"><%= imp.failed_rows %></span>
+                                        <% } else { %>
+                                        <span class="badge bg-secondary">0</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (imp.duplicates_skipped > 0) { %>
+                                        <span class="badge bg-warning text-dark"><%= imp.duplicates_skipped %></span>
+                                        <% } else { %>
+                                        <span class="badge bg-secondary">0</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (imp.status === 'completed') { %>
+                                        <span class="badge bg-success">Completed</span>
+                                        <% } else if (imp.status === 'processing') { %>
+                                        <span class="badge bg-info">Processing</span>
+                                        <% } else if (imp.status === 'failed') { %>
+                                        <span class="badge bg-danger">Failed</span>
+                                        <% } else { %>
+                                        <span class="badge bg-secondary"><%= imp.status %></span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <%= new Date(imp.created_at).toLocaleString('en-NZ', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) %>
+                                    </td>
+                                </tr>
+                                <% if (imp.error_log && JSON.parse(imp.error_log).length > 0) { %>
+                                <tr>
+                                    <td colspan="9" class="bg-light">
+                                        <details>
+                                            <summary class="text-danger cursor-pointer">
+                                                <small>View Errors (<%= JSON.parse(imp.error_log).length %>)</small>
+                                            </summary>
+                                            <div class="mt-2">
+                                                <pre class="bg-white p-2 rounded"><%= imp.error_log %></pre>
+                                            </div>
+                                        </details>
+                                    </td>
+                                </tr>
+                                <% } %>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <% } else { %>
+            <div class="alert alert-info">
+                <h5 class="alert-heading">No Import History</h5>
+                <p class="mb-0">You haven't imported any CSV files yet. <a href="/admin/csv-import" class="alert-link">Start your first import</a> to see it here!</p>
+            </div>
+            <% } %>
+
+            <div class="mt-4">
+                <a href="/admin" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+details summary {
+    cursor: pointer;
+    user-select: none;
+}
+details summary:hover {
+    text-decoration: underline;
+}
+</style>
+
+<%- include('../partials/footer') %>

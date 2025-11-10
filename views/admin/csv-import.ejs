@@ -1,0 +1,152 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Bulk CSV Import</h2>
+                <div>
+                    <a href="/admin/csv-import/template" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-download"></i> Download Template
+                    </a>
+                    <a href="/admin/csv-import/history" class="btn btn-outline-secondary">
+                        <i class="bi bi-clock-history"></i> Import History
+                    </a>
+                </div>
+            </div>
+
+            <% if (errors && errors.length > 0) { %>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    <% errors.forEach(error => { %>
+                    <li><%= error.msg %></li>
+                    <% }); %>
+                </ul>
+            </div>
+            <% } %>
+
+            <div class="alert alert-info">
+                <h5 class="alert-heading">How Bulk Import Works</h5>
+                <ol class="mb-0">
+                    <li>Download the CSV template or prepare your own CSV file</li>
+                    <li>Fill in your card data (card_name is required, others optional)</li>
+                    <li>Upload the CSV file and map columns if needed</li>
+                    <li>Preview the data and choose how to handle duplicates</li>
+                    <li>Execute the import - cards will be added to inventory!</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="/admin/csv-import/upload" method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="csv_file" class="form-label">
+                                <h5>Step 1: Select CSV File</h5>
+                            </label>
+                            <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv,.txt" required>
+                            <div class="form-text">Maximum file size: 10MB. Accepted formats: .csv, .txt</div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-4">
+                            <h5 class="mb-3">Step 2: Map CSV Columns (Optional)</h5>
+                            <p class="text-muted">If your CSV uses different column names, map them to our database fields:</p>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Card Name Column</label>
+                                    <input type="text" class="form-control" name="col_card_name"
+                                           placeholder="card_name" value="card_name">
+                                    <small class="text-danger">* Required field</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Set Name Column</label>
+                                    <input type="text" class="form-control" name="col_set_name"
+                                           placeholder="set_name" value="set_name">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Card Number Column</label>
+                                    <input type="text" class="form-control" name="col_card_number"
+                                           placeholder="card_number" value="card_number">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Year Column</label>
+                                    <input type="text" class="form-control" name="col_year"
+                                           placeholder="year" value="year">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Sport/Type Column</label>
+                                    <input type="text" class="form-control" name="col_sport_type"
+                                           placeholder="sport_type" value="sport_type">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Player Name Column</label>
+                                    <input type="text" class="form-control" name="col_player_name"
+                                           placeholder="player_name" value="player_name">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Condition Column</label>
+                                    <input type="text" class="form-control" name="col_condition"
+                                           placeholder="condition" value="condition">
+                                    <small class="text-muted">mint, near_mint, excellent, good, played</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Price (NZD) Column</label>
+                                    <input type="text" class="form-control" name="col_price_nzd"
+                                           placeholder="price_nzd" value="price_nzd">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Quantity Column</label>
+                                    <input type="text" class="form-control" name="col_quantity"
+                                           placeholder="quantity" value="quantity">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Rarity Column</label>
+                                    <input type="text" class="form-control" name="col_rarity"
+                                           placeholder="rarity" value="rarity">
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Description Column</label>
+                                    <input type="text" class="form-control" name="col_description"
+                                           placeholder="description" value="description">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-upload"></i> Upload and Preview
+                            </button>
+                            <a href="/admin/cards" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">CSV Format Example</h5>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded"><code>card_name,set_name,card_number,year,sport_type,player_name,condition,price_nzd,quantity,rarity,description
+Michael Jordan Rookie,1986 Fleer,57,1986,basketball,Michael Jordan,near_mint,125.00,1,rare,Iconic rookie card
+Pikachu,Base Set,58,1999,pokemon,Pikachu,mint,45.00,3,common,Classic Pokemon card
+Black Lotus,Alpha,1,1993,magic,N/A,excellent,15000.00,1,mythic,Power Nine card</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

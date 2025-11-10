@@ -18,20 +18,58 @@
     <div class="row">
         <!-- Image Section -->
         <div class="col-md-6 mb-4">
-            <% if (card.image_front) { %>
-            <img src="<%= card.image_front %>" class="img-fluid product-image-main w-100 mb-3" alt="<%= card.card_name %>">
+            <%
+            // Build all images array
+            const allImages = [];
+            if (card.image_front) allImages.push({url: card.image_front, label: 'Front'});
+            if (card.image_back) allImages.push({url: card.image_back, label: 'Back'});
+            if (additionalImages && additionalImages.length > 0) {
+                additionalImages.forEach(img => {
+                    allImages.push({url: img.image_url, label: img.image_type});
+                });
+            }
+            %>
+
+            <% if (allImages.length > 0) { %>
+            <!-- Main Image -->
+            <div class="mb-3 position-relative">
+                <img src="<%= allImages[0].url %>"
+                     class="img-fluid product-image-main w-100 cursor-pointer"
+                     alt="<%= card.card_name %>"
+                     onclick="openLightbox(0)"
+                     style="cursor: pointer; border: 2px solid #ddd; border-radius: 8px;">
+                <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge bg-dark">
+                        <i class="bi bi-zoom-in"></i> Click to enlarge
+                    </span>
+                </div>
+            </div>
+
+            <!-- Thumbnail Gallery -->
+            <% if (allImages.length > 1) { %>
+            <div class="row g-2">
+                <% allImages.forEach((img, index) => { %>
+                <div class="col-3">
+                    <div class="position-relative">
+                        <img src="<%= img.url %>"
+                             class="img-thumbnail w-100 cursor-pointer"
+                             alt="<%= img.label %>"
+                             onclick="openLightbox(<%= index %>)"
+                             style="cursor: pointer; height: 80px; object-fit: cover;">
+                        <small class="text-center d-block text-muted" style="font-size: 0.7rem;">
+                            <%= img.label %>
+                        </small>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+            <p class="text-muted small mt-2 text-center">
+                <i class="bi bi-images"></i> <%= allImages.length %> high-quality images - Click to view full size
+            </p>
+            <% } %>
             <% } else { %>
             <div class="product-image-main w-100 d-flex align-items-center justify-content-center" style="height: 500px;">
                 <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
-            </div>
-            <% } %>
-
-            <% if (card.image_back) { %>
-            <div class="row">
-                <div class="col-12">
-                    <p class="text-muted small mb-2">Back Image:</p>
-                    <img src="<%= card.image_back %>" class="img-fluid product-image-main w-100" alt="<%= card.card_name %> back">
-                </div>
             </div>
             <% } %>
         </div>
@@ -155,5 +193,91 @@
         </div>
     </div>
 </div>
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="lightboxLabel">Image Gallery</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 position-relative">
+                <img id="lightboxImage" src="" class="img-fluid w-100" alt="Card image">
+
+                <% if (allImages && allImages.length > 1) { %>
+                <!-- Previous Button -->
+                <button class="btn btn-light position-absolute top-50 start-0 translate-middle-y ms-3"
+                        onclick="changeLightboxImage(-1)" style="opacity: 0.8;">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+
+                <!-- Next Button -->
+                <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y me-3"
+                        onclick="changeLightboxImage(1)" style="opacity: 0.8;">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+
+                <!-- Image Counter -->
+                <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3">
+                    <span class="badge bg-dark" id="imageCounter">1 / <%= allImages.length %></span>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Lightbox functionality
+const images = <%- JSON.stringify(allImages || []) %>;
+let currentImageIndex = 0;
+
+function openLightbox(index) {
+    currentImageIndex = index;
+    updateLightboxImage();
+    const modal = new bootstrap.Modal(document.getElementById('lightboxModal'));
+    modal.show();
+}
+
+function changeLightboxImage(direction) {
+    currentImageIndex += direction;
+
+    // Loop around
+    if (currentImageIndex < 0) {
+        currentImageIndex = images.length - 1;
+    } else if (currentImageIndex >= images.length) {
+        currentImageIndex = 0;
+    }
+
+    updateLightboxImage();
+}
+
+function updateLightboxImage() {
+    if (images.length > 0) {
+        document.getElementById('lightboxImage').src = images[currentImageIndex].url;
+        document.getElementById('lightboxLabel').textContent = images[currentImageIndex].label + ' View';
+
+        const counter = document.getElementById('imageCounter');
+        if (counter) {
+            counter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+        }
+    }
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('lightboxModal');
+    if (modal.classList.contains('show')) {
+        if (e.key === 'ArrowLeft') {
+            changeLightboxImage(-1);
+        } else if (e.key === 'ArrowRight') {
+            changeLightboxImage(1);
+        } else if (e.key === 'Escape') {
+            bootstrap.Modal.getInstance(modal).hide();
+        }
+    }
+});
+</script>
 
 <%- include('../partials/footer') %>
