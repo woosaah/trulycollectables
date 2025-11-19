@@ -2,10 +2,13 @@ const express = require('express');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
+const morgan = require('morgan');
 const path = require('path');
 require('dotenv').config();
 
 const pool = require('./config/database');
+const { helmetConfig, csrfProtection } = require('./middleware/security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,10 +17,21 @@ const PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Middleware
+// Security and performance middleware
+app.use(helmetConfig);
+app.use(compression());
+
+// Logging (only in development)
+if (process.env.NODE_ENV !== 'production') {
+    app.use(morgan('dev'));
+}
+
+// Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -36,6 +50,9 @@ app.use(session({
         secure: process.env.NODE_ENV === 'production'
     }
 }));
+
+// CSRF protection
+app.use(csrfProtection);
 
 // Make user available to all templates
 app.use((req, res, next) => {

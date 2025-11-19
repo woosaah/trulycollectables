@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const emailService = require('../services/emailService');
 
 const Order = {
     // Generate unique order number
@@ -15,7 +16,7 @@ const Order = {
         try {
             await client.query('BEGIN');
 
-            const { customer_name, customer_email, shipping_address, notes } = orderData;
+            const { customer_name, customer_email, shipping_address, notes, coupon_id, discount_amount } = orderData;
 
             // Get cart items
             const cartQuery = `
@@ -43,18 +44,22 @@ const Order = {
 
             // Create order
             const orderNumber = this.generateOrderNumber();
+            const subtotal = total;
+            const finalDiscount = discount_amount || 0;
+            const finalTotal = total - finalDiscount;
+
             const orderQuery = `
                 INSERT INTO orders (
-                    user_id, order_number, total_nzd, customer_name,
-                    customer_email, shipping_address, notes
+                    user_id, order_number, subtotal_nzd, discount_amount, total_nzd,
+                    customer_name, customer_email, shipping_address, notes, coupon_id
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 RETURNING *
             `;
 
             const orderResult = await client.query(orderQuery, [
-                userId, orderNumber, total, customer_name,
-                customer_email, shipping_address, notes
+                userId, orderNumber, subtotal, finalDiscount, finalTotal,
+                customer_name, customer_email, shipping_address, notes, coupon_id || null
             ]);
 
             const order = orderResult.rows[0];
@@ -90,6 +95,15 @@ const Order = {
             await client.query('DELETE FROM cart WHERE user_id = $1', [userId]);
 
             await client.query('COMMIT');
+
+            // Send order confirmation email
+            try {
+                const orderItems = await this.getItems(order.id);
+                await emailService.sendOrderConfirmation(order, orderItems);
+            } catch (emailError) {
+                console.error('Failed to send order confirmation email:', emailError);
+            }
+
             return order;
         } catch (error) {
             await client.query('ROLLBACK');
@@ -180,7 +194,16 @@ const Order = {
             RETURNING *
         `;
         const result = await pool.query(query, [status, id]);
-        return result.rows[0];
+        const order = result.rows[0];
+
+        // Send status update email
+        try {
+            await emailService.sendOrderStatusUpdate(order, status);
+        } catch (emailError) {
+            console.error('Failed to send order status update email:', emailError);
+        }
+
+        return order;
     }
 };
 
