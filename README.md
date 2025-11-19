@@ -22,10 +22,14 @@ A trading card ecommerce platform with integrated collection management built wi
 
 ### Admin Features
 - Card inventory management
-- Image upload for cards
+- Image upload for cards (including multiple condition photos)
 - Order management and status updates
 - Figurine approval system
 - Inquiry management
+- **🆕 Bulk CSV Import** - Import hundreds of cards at once with duplicate detection
+- **🆕 Unit Testing Dashboard** - Run automated tests after updates
+- **🆕 Price History Tracking** - Automatic price change logging
+- **🆕 Social Proof Tools** - View tracking and sales analytics
 
 ## Tech Stack
 
@@ -68,9 +72,10 @@ createdb trulycollectables
 psql -c "CREATE USER trulycollectables_user WITH PASSWORD 'your_password';"
 psql -c "GRANT ALL PRIVILEGES ON DATABASE trulycollectables TO trulycollectables_user;"
 
-# Run schema
+# Run schema and migrations
 psql trulycollectables < database/schema.sql
 psql trulycollectables < database/session.sql
+psql trulycollectables < database/migrations.sql  # New features
 ```
 
 ### 4. Configure environment variables
@@ -120,6 +125,65 @@ The application will be available at `http://localhost:3000`
 ```bash
 npm start
 ```
+
+## 🧪 Testing
+
+The platform includes comprehensive automated testing with an admin interface.
+
+### Run Tests via Admin Panel
+1. Navigate to `/admin/tests`
+2. Click "Run All Tests" or select specific test suites
+3. View detailed results with pass/fail status and coverage metrics
+
+### Run Tests via Command Line
+
+```bash
+# Run all tests with coverage
+npm test
+
+# Run specific test suites
+npm run test:models        # Model tests only
+npm run test:routes        # Route tests only
+npm run test:integration   # Integration tests only
+
+# Development watch mode
+npm run test:watch
+```
+
+### Test Coverage
+- 35+ automated tests covering models and workflows
+- Code coverage reporting for all models and routes
+- Integration tests for complete user workflows
+
+See [TESTING.md](TESTING.md) for complete testing documentation.
+
+## 🆕 New Features Guide
+
+### Bulk CSV Import
+1. Go to `/admin/csv-import`
+2. Download template CSV file
+3. Fill in your card data
+4. Upload and map columns if needed
+5. Preview before importing
+6. Execute import with duplicate handling
+
+### Multiple Image Upload
+1. Edit any card in admin panel
+2. Scroll to "Condition Comparison Images" section
+3. Upload multiple photos (up to 10)
+4. Customers see full lightbox gallery on card detail pages
+
+### Price History Tracking
+- Automatically logs all price changes via database trigger
+- View price trends on card detail pages
+- No manual configuration needed
+
+### Social Proof Features
+- Tracks card views automatically
+- Records sales for "recently sold" display
+- Shows popular/trending cards
+
+For complete feature documentation, see [FEATURES.md](FEATURES.md).
 
 ## Deployment with PM2
 
@@ -211,19 +275,32 @@ trulycollectables/
 
 ## Database Schema
 
-The application uses the following main tables:
-
+### Core Tables
 - **users**: User accounts and authentication
-- **cards**: Seller's card inventory
+- **cards**: Seller's card inventory (enhanced with new fields)
 - **figurines**: Seller's figurine inventory
 - **user_collections**: User's personal card collections
-- **cart**: Shopping cart items
+- **cart**: Shopping cart items (supports bundles)
 - **orders**: Customer orders
 - **order_items**: Items in each order
 - **inquiries**: Customer inquiries about cards
 - **session**: Session storage
 
-See `database/schema.sql` for the complete schema.
+### New Feature Tables
+- **csv_imports**: Bulk import history and tracking
+- **price_history**: Automatic price change logging
+- **card_images**: Multiple images per card
+- **bundles** & **bundle_items**: Card packs and themed sets
+- **trade_submissions**: Trade-in request workflow
+- **sold_cards**: Recently sold tracking for social proof
+- **card_views**: View tracking and analytics
+- **saved_searches**: User saved search preferences
+- **set_trackers**: Set completion tracking
+- **grading_info**: Grading service information (PSA, BGS, etc.)
+- **wishlist_notifications**: Notification queue for wanted cards
+- **notification_preferences**: User email preferences
+
+See `database/schema.sql` and `database/migrations.sql` for complete schema.
 
 ## Security Considerations
 

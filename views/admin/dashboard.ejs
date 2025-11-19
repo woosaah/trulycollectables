@@ -35,7 +35,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row mb-4">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
@@ -50,6 +50,72 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Bulk Import
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Import hundreds of cards at once from CSV files. Perfect for bulk inventory updates!</p>
+                    <ul class="small mb-3">
+                        <li>Column mapping support</li>
+                        <li>Duplicate detection</li>
+                        <li>Preview before importing</li>
+                        <li>Import history tracking</li>
+                    </ul>
+                    <a href="/admin/csv-import" class="btn btn-success">
+                        <i class="bi bi-upload"></i> CSV Import
+                    </a>
+                    <a href="/admin/csv-import/history" class="btn btn-outline-success">
+                        <i class="bi bi-clock-history"></i> History
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card border-info h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check2-square"></i> Unit Testing
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Run automated tests to ensure all features work correctly after updates.</p>
+                    <ul class="small mb-3">
+                        <li>35+ automated tests</li>
+                        <li>Code coverage reports</li>
+                        <li>Integration testing</li>
+                        <li>One-click execution</li>
+                    </ul>
+                    <a href="/admin/tests" class="btn btn-info">
+                        <i class="bi bi-lightning"></i> Run Tests
+                    </a>
+                    <a href="/admin/tests/coverage" target="_blank" class="btn btn-outline-info">
+                        <i class="bi bi-graph-up"></i> Coverage
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <h5 class="alert-heading">
+            <i class="bi bi-stars"></i> New Features Available
+        </h5>
+        <p class="mb-2"><strong>Recently Added:</strong></p>
+        <ul class="mb-0">
+            <li><strong>Bulk CSV Import</strong> - Import hundreds of cards at once with duplicate detection</li>
+            <li><strong>Multiple Images</strong> - Add up to 10 condition photos per card with lightbox gallery</li>
+            <li><strong>Price History</strong> - Automatic tracking of all price changes</li>
+            <li><strong>Unit Testing</strong> - Run tests after updates to catch bugs early</li>
+            <li><strong>Social Proof</strong> - Track views, sales, and trending cards</li>
+        </ul>
     </div>
 </div>
 
