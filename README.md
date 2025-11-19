@@ -27,6 +27,19 @@ A trading card ecommerce platform with integrated collection management built wi
 - Figurine approval system
 - Inquiry management
 
+### Enterprise Features 🚀
+- **Email Notifications**: Automated order confirmations and status updates
+- **Reviews & Ratings**: 5-star rating system with moderation
+- **Wishlist**: Save items for later purchase
+- **Discount Coupons**: Create and manage promotional codes
+- **Activity Logging**: Complete audit trail of all system actions
+- **Rate Limiting**: Protection against brute force and abuse
+- **Security Headers**: Helmet.js for enhanced security
+- **User Profiles**: Extended user information and preferences
+- **Password Reset**: Secure self-service password recovery
+
+> **See [ENTERPRISE_FEATURES.md](ENTERPRISE_FEATURES.md) for complete documentation**
+
 ## Tech Stack
 
 - **Backend**: Node.js + Express
