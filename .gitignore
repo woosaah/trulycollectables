@@ -3,3 +3,6 @@ node_modules/
 uploads/
 *.log
 .DS_Store
+askpass.sh
+*.png
+tests/screenshots/

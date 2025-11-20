@@ -74,7 +74,12 @@ app.use('/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).render('public/404', { title: 'Page Not Found' });
+    res.status(404).render('public/404', {
+        title: 'Page Not Found',
+        csrfToken: req.csrfToken ? req.csrfToken() : '',
+        user: res.locals.user || null,
+        isAdmin: res.locals.isAdmin || false
+    });
 });
 
 // Error handler
@@ -84,15 +89,19 @@ app.use((err, req, res, next) => {
         title: 'Error',
         message: process.env.NODE_ENV === 'production'
             ? 'Something went wrong!'
-            : err.message
+            : err.message,
+        csrfToken: req.csrfToken ? req.csrfToken() : '',
+        user: res.locals.user || null,
+        isAdmin: res.locals.isAdmin || false
     });
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`✓ Server running on port ${PORT}`);
     console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✓ Visit: http://localhost:${PORT}`);
+    console.log(`✓ Network access enabled on all interfaces`);
 });
 
 module.exports = app;
