@@ -1,0 +1,223 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 class="mb-4">CSV Import Preview</h2>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-success"><%= preview.validRows %></h3>
+                            <p class="mb-0">Valid Rows</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-warning"><%= preview.duplicates %></h3>
+                            <p class="mb-0">Duplicates Found</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-danger"><%= preview.errorRows %></h3>
+                            <p class="mb-0">Error Rows</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-primary"><%= preview.unique %></h3>
+                            <p class="mb-0">Ready to Import</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sample Data Preview -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Sample Data (First 5 Rows)</h5>
+                </div>
+                <div class="card-body">
+                    <% if (preview.sampleRows && preview.sampleRows.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Card Name</th>
+                                    <th>Set</th>
+                                    <th>Number</th>
+                                    <th>Year</th>
+                                    <th>Sport/Type</th>
+                                    <th>Condition</th>
+                                    <th>Price NZD</th>
+                                    <th>Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% preview.sampleRows.forEach(row => { %>
+                                <tr>
+                                    <td><%= row.card_name %></td>
+                                    <td><%= row.set_name || '-' %></td>
+                                    <td><%= row.card_number || '-' %></td>
+                                    <td><%= row.year || '-' %></td>
+                                    <td><%= row.sport_type || '-' %></td>
+                                    <td><%= row.condition || '-' %></td>
+                                    <td>$<%= row.price_nzd || '0.00' %></td>
+                                    <td><%= row.quantity || 1 %></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <% } else { %>
+                    <p class="text-muted">No valid rows to display.</p>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Duplicates Found -->
+            <% if (preview.duplicates > 0) { %>
+            <div class="card mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Duplicates Found (<%= preview.duplicates %>)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>These cards already exist in your inventory. Choose how to handle them:</p>
+
+                    <% if (preview.duplicateList && preview.duplicateList.length > 0) { %>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>CSV Card</th>
+                                    <th>Existing Card</th>
+                                    <th>Existing Price</th>
+                                    <th>Existing Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% preview.duplicateList.forEach(dup => { %>
+                                <tr>
+                                    <td><%= dup.csvRow.card_name %> (<%= dup.csvRow.set_name || 'No Set' %>)</td>
+                                    <td><%= dup.existingCard.card_name %></td>
+                                    <td>$<%= dup.existingCard.price_nzd %></td>
+                                    <td><%= dup.existingCard.quantity %></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <% if (preview.duplicates > 10) { %>
+                    <p class="text-muted"><small>Showing first 10 duplicates. Total: <%= preview.duplicates %></small></p>
+                    <% } %>
+                    <% } %>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- Errors Found -->
+            <% if (preview.errorRows > 0) { %>
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-x-circle"></i>
+                        Validation Errors (<%= preview.errorRows %>)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>These rows have errors and will be skipped:</p>
+                    <div class="accordion" id="errorAccordion">
+                        <% preview.errors.slice(0, 10).forEach((error, index) => { %>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#error<%= index %>">
+                                    Row <%= error.row %>: <%= error.errors.join(', ') %>
+                                </button>
+                            </h2>
+                            <div id="error<%= index %>" class="accordion-collapse collapse"
+                                 data-bs-parent="#errorAccordion">
+                                <div class="accordion-body">
+                                    <strong>Data:</strong>
+                                    <pre class="bg-light p-2"><%= JSON.stringify(error.data, null, 2) %></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <% if (preview.errorRows > 10) { %>
+                    <p class="text-muted mt-3"><small>Showing first 10 errors. Total: <%= preview.errorRows %></small></p>
+                    <% } %>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- Import Actions -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Ready to Import</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/admin/csv-import/execute" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <strong>How should duplicates be handled?</strong>
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="duplicate_action"
+                                       id="action_skip" value="skip" checked>
+                                <label class="form-check-label" for="action_skip">
+                                    <strong>Skip Duplicates</strong> - Only import new cards (Recommended)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="duplicate_action"
+                                       id="action_update" value="update">
+                                <label class="form-check-label" for="action_update">
+                                    <strong>Update Existing</strong> - Replace existing card data with CSV data
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="duplicate_action"
+                                       id="action_merge" value="merge">
+                                <label class="form-check-label" for="action_merge">
+                                    <strong>Merge Quantity</strong> - Add CSV quantity to existing quantity
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>Import Summary:</strong>
+                            <ul class="mb-0">
+                                <li><%= preview.unique %> new cards will be added</li>
+                                <li><%= preview.duplicates %> duplicates will be handled based on your selection</li>
+                                <li><%= preview.errorRows %> rows will be skipped due to errors</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Execute Import
+                            </button>
+                            <a href="/admin/csv-import" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

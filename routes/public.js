@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Card = require('../models/Card');
+const CardImage = require('../models/CardImage');
 const Figurine = require('../models/Figurine');
 const Inquiry = require('../models/Inquiry');
 
@@ -80,9 +81,13 @@ router.get('/cards/:id', async (req, res) => {
             });
         }
 
+        // Get additional images for gallery
+        const additionalImages = await CardImage.getByCardId(req.params.id);
+
         res.render('public/card-detail', {
             title: `${card.card_name} - ${card.set_name || 'Card'}`,
-            card
+            card,
+            additionalImages
         });
     } catch (error) {
         console.error('Card detail error:', error);

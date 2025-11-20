@@ -1,0 +1,146 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-4">
+                <% if (result.failed === 0) { %>
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                <h2 class="mt-3 text-success">Import Completed Successfully!</h2>
+                <% } else if (result.successful > 0) { %>
+                <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 4rem;"></i>
+                <h2 class="mt-3 text-warning">Import Completed with Warnings</h2>
+                <% } else { %>
+                <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
+                <h2 class="mt-3 text-danger">Import Failed</h2>
+                <% } %>
+            </div>
+
+            <!-- Results Summary -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-success"><%= result.successful %></h3>
+                            <p class="mb-0">Successful</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-warning"><%= result.skipped %></h3>
+                            <p class="mb-0">Skipped</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-danger"><%= result.failed %></h3>
+                            <p class="mb-0">Failed</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-primary"><%= result.totalRows %></h3>
+                            <p class="mb-0">Total Rows</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Results -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Import Details</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            <strong><%= result.successful %></strong> cards imported successfully
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-skip-forward text-warning"></i>
+                            <strong><%= result.skipped %></strong> cards skipped (duplicates)
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-x-circle text-danger"></i>
+                            <strong><%= result.failed %></strong> cards failed to import
+                        </li>
+                        <li>
+                            <i class="bi bi-file-earmark-text text-info"></i>
+                            <strong>Import ID:</strong> #<%= result.importId %>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Error Details -->
+            <% if (result.errors && result.errors.length > 0) { %>
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Error Details (<%= result.errors.length %>)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>The following cards could not be imported:</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Card Name</th>
+                                    <th>Error Message</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% result.errors.forEach(error => { %>
+                                <tr>
+                                    <td><%= error.card_name || 'Unknown' %></td>
+                                    <td><span class="text-danger"><%= error.error %></span></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- Success Message -->
+            <% if (result.successful > 0) { %>
+            <div class="alert alert-success">
+                <h5 class="alert-heading">What's Next?</h5>
+                <ul class="mb-0">
+                    <li>Your cards have been added to the inventory</li>
+                    <li>You can view them in the <a href="/admin/cards" class="alert-link">card management</a> page</li>
+                    <li>Don't forget to add images to your newly imported cards!</li>
+                </ul>
+            </div>
+            <% } %>
+
+            <!-- Actions -->
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="/admin/cards" class="btn btn-primary">
+                    <i class="bi bi-grid"></i> View All Cards
+                </a>
+                <a href="/admin/csv-import" class="btn btn-outline-primary">
+                    <i class="bi bi-upload"></i> Import More Cards
+                </a>
+                <a href="/admin/csv-import/history" class="btn btn-outline-secondary">
+                    <i class="bi bi-clock-history"></i> Import History
+                </a>
+                <a href="/admin" class="btn btn-outline-secondary">
+                    <i class="bi bi-house"></i> Admin Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
