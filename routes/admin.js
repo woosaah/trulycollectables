@@ -2,12 +2,17 @@ const express = require('express');
 const router = express.Router();
 const { requireAdmin } = require('../middleware/auth');
 const Card = require('../models/Card');
+const CardImage = require('../models/CardImage');
 const Figurine = require('../models/Figurine');
 const Order = require('../models/Order');
 const Inquiry = require('../models/Inquiry');
+const CsvImport = require('../models/CsvImport');
+const User = require('../models/User');
+const TestRunner = require('../services/TestRunner');
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 // All routes require admin authentication
 router.use(requireAdmin);
@@ -154,10 +159,16 @@ router.get('/cards/:id/edit', async (req, res) => {
             return res.status(404).render('public/404', { title: 'Card Not Found' });
         }
 
+        // Get additional images
+        const additionalImages = await CardImage.getByCardId(req.params.id);
+
         res.render('admin/card-edit', {
             title: 'Edit Card',
             card,
-            errors: []
+            additionalImages,
+            errors: [],
+            success: req.query.success,
+            error: req.query.error
         });
     } catch (error) {
         console.error('Edit card error:', error);
@@ -209,6 +220,52 @@ router.post('/cards/:id/toggle-availability', async (req, res) => {
     } catch (error) {
         console.error('Toggle availability error:', error);
         res.redirect('/admin/cards');
+    }
+});
+
+// === CARD IMAGE MANAGEMENT ===
+
+// Add multiple images to card
+router.post('/cards/:id/images/add',
+    upload.array('images', 10), // Allow up to 10 images
+    async (req, res) => {
+        try {
+            if (!req.files || req.files.length === 0) {
+                return res.redirect(`/admin/cards/${req.params.id}/edit?error=no_images`);
+            }
+
+            const images = req.files.map((file, index) => ({
+                url: `/uploads/${file.filename}`,
+                type: req.body[`image_type_${index}`] || 'detail',
+                order: index
+            }));
+
+            await CardImage.addMultiple(req.params.id, images);
+            res.redirect(`/admin/cards/${req.params.id}/edit?success=images_added`);
+        } catch (error) {
+            console.error('Add images error:', error);
+            res.redirect(`/admin/cards/${req.params.id}/edit?error=add_failed`);
+        }
+    }
+);
+
+// Delete card image
+router.post('/cards/:cardId/images/:imageId/delete', async (req, res) => {
+    try {
+        const deletedImage = await CardImage.delete(req.params.imageId);
+
+        // Delete physical file
+        if (deletedImage && deletedImage.image_url) {
+            const filePath = path.join(__dirname, '..', deletedImage.image_url);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+
+        res.redirect(`/admin/cards/${req.params.cardId}/edit?success=image_deleted`);
+    } catch (error) {
+        console.error('Delete image error:', error);
+        res.redirect(`/admin/cards/${req.params.cardId}/edit?error=delete_failed`);
     }
 });
 
@@ -366,6 +423,362 @@ router.post('/inquiries/:id/status', async (req, res) => {
     } catch (error) {
         console.error('Update inquiry status error:', error);
         res.redirect('/admin/inquiries');
+    }
+});
+
+// === CSV BULK IMPORT ===
+
+// Configure CSV file upload
+const csvUpload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, 'uploads/csv/');
+        },
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, 'import-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /csv|txt/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = file.mimetype === 'text/csv' || file.mimetype === 'text/plain';
+
+        if (mimetype || extname) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Only CSV files are allowed!'));
+        }
+    }
+});
+
+// Ensure CSV upload directory exists
+if (!fs.existsSync('uploads/csv')) {
+    fs.mkdirSync('uploads/csv', { recursive: true });
+}
+
+// CSV Import page
+router.get('/csv-import', (req, res) => {
+    res.render('admin/csv-import', {
+        title: 'Bulk CSV Import',
+        errors: []
+    });
+});
+
+// Download CSV template
+router.get('/csv-import/template', (req, res) => {
+    const template = CsvImport.generateTemplate();
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=card_import_template.csv');
+    res.send(template.csv);
+});
+
+// Upload and preview CSV
+router.post('/csv-import/upload', csvUpload.single('csv_file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.render('admin/csv-import', {
+                title: 'Bulk CSV Import',
+                errors: [{ msg: 'Please select a CSV file to upload' }]
+            });
+        }
+
+        // Parse CSV with column mapping from form
+        const columnMapping = {
+            card_name: req.body.col_card_name || 'card_name',
+            set_name: req.body.col_set_name || 'set_name',
+            card_number: req.body.col_card_number || 'card_number',
+            year: req.body.col_year || 'year',
+            sport_type: req.body.col_sport_type || 'sport_type',
+            player_name: req.body.col_player_name || 'player_name',
+            condition: req.body.col_condition || 'condition',
+            price_nzd: req.body.col_price_nzd || 'price_nzd',
+            quantity: req.body.col_quantity || 'quantity',
+            rarity: req.body.col_rarity || 'rarity',
+            description: req.body.col_description || 'description'
+        };
+
+        const parseResult = await CsvImport.parseCSV(req.file.path, columnMapping);
+
+        // Detect duplicates
+        const duplicateResult = await CsvImport.detectDuplicates(parseResult.results);
+
+        // Store preview data in session
+        req.session.csvPreview = {
+            filePath: req.file.path,
+            filename: req.file.originalname,
+            columnMapping,
+            validRows: parseResult.results.length,
+            errorRows: parseResult.errors.length,
+            duplicates: duplicateResult.duplicates.length,
+            unique: duplicateResult.unique.length,
+            errors: parseResult.errors,
+            duplicateList: duplicateResult.duplicates.slice(0, 10), // First 10 duplicates
+            sampleRows: parseResult.results.slice(0, 5) // First 5 rows
+        };
+
+        res.render('admin/csv-import-preview', {
+            title: 'CSV Import Preview',
+            preview: req.session.csvPreview
+        });
+
+    } catch (error) {
+        console.error('CSV upload error:', error);
+
+        // Clean up uploaded file
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+
+        res.render('admin/csv-import', {
+            title: 'Bulk CSV Import',
+            errors: [{ msg: `Upload failed: ${error.message}` }]
+        });
+    }
+});
+
+// Execute CSV import
+router.post('/csv-import/execute', async (req, res) => {
+    try {
+        const preview = req.session.csvPreview;
+
+        if (!preview || !fs.existsSync(preview.filePath)) {
+            return res.redirect('/admin/csv-import?error=session_expired');
+        }
+
+        const duplicateAction = req.body.duplicate_action || 'skip'; // 'skip', 'update', 'merge'
+
+        // Parse CSV again
+        const parseResult = await CsvImport.parseCSV(preview.filePath, preview.columnMapping);
+
+        // Execute import
+        const importResult = await CsvImport.importCards(
+            parseResult.results,
+            req.session.user.id,
+            preview.filename,
+            duplicateAction
+        );
+
+        // Clean up uploaded file
+        if (fs.existsSync(preview.filePath)) {
+            fs.unlinkSync(preview.filePath);
+        }
+
+        // Clear session
+        delete req.session.csvPreview;
+
+        res.render('admin/csv-import-result', {
+            title: 'Import Complete',
+            result: importResult
+        });
+
+    } catch (error) {
+        console.error('CSV import execution error:', error);
+        res.redirect('/admin/csv-import?error=import_failed');
+    }
+});
+
+// Import history
+router.get('/csv-import/history', async (req, res) => {
+    try {
+        const history = await CsvImport.getImportHistory(50);
+
+        res.render('admin/csv-import-history', {
+            title: 'CSV Import History',
+            imports: history
+        });
+    } catch (error) {
+        console.error('Import history error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to load import history'
+        });
+    }
+});
+
+// === UNIT TESTING & TEST RUNNER ===
+
+// Test dashboard
+router.get('/tests', (req, res) => {
+    try {
+        const availableTests = TestRunner.getAvailableTests();
+        const coverage = TestRunner.getCoverageSummary();
+
+        res.render('admin/test-dashboard', {
+            title: 'Unit Testing Dashboard',
+            availableTests,
+            coverage
+        });
+    } catch (error) {
+        console.error('Test dashboard error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to load test dashboard'
+        });
+    }
+});
+
+// Run all tests
+router.post('/tests/run-all', async (req, res) => {
+    try {
+        const results = await TestRunner.runAllTests();
+        const formatted = TestRunner.formatResults(results);
+
+        res.render('admin/test-results', {
+            title: 'All Tests - Results',
+            results: formatted,
+            testType: 'all'
+        });
+    } catch (error) {
+        console.error('Run all tests error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to run tests: ' + error.message
+        });
+    }
+});
+
+// Run model tests
+router.post('/tests/run-model/:modelName', async (req, res) => {
+    try {
+        const modelName = req.params.modelName;
+        const results = await TestRunner.runModelTests(modelName);
+        const formatted = TestRunner.formatResults(results);
+
+        res.render('admin/test-results', {
+            title: `${modelName} Tests - Results`,
+            results: formatted,
+            testType: 'model',
+            modelName
+        });
+    } catch (error) {
+        console.error('Run model tests error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to run model tests: ' + error.message
+        });
+    }
+});
+
+// Run integration tests
+router.post('/tests/run-integration', async (req, res) => {
+    try {
+        const results = await TestRunner.runIntegrationTests();
+        const formatted = TestRunner.formatResults(results);
+
+        res.render('admin/test-results', {
+            title: 'Integration Tests - Results',
+            results: formatted,
+            testType: 'integration'
+        });
+    } catch (error) {
+        console.error('Run integration tests error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to run integration tests: ' + error.message
+        });
+    }
+});
+
+// Get test coverage report
+router.get('/tests/coverage', (req, res) => {
+    try {
+        const coveragePath = path.join(__dirname, '..', 'coverage', 'lcov-report', 'index.html');
+
+        if (fs.existsSync(coveragePath)) {
+            res.sendFile(coveragePath);
+        } else {
+            res.render('public/error', {
+                title: 'Coverage Not Available',
+                message: 'Please run tests first to generate coverage report'
+            });
+        }
+    } catch (error) {
+        console.error('Coverage report error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to load coverage report'
+        });
+    }
+});
+
+// === USER MANAGEMENT ===
+
+// List all users
+router.get('/users', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 50;
+        const offset = (page - 1) * limit;
+
+        const filters = {
+            search: req.query.search,
+            role: req.query.role
+        };
+
+        const users = await User.findAll(limit, offset, filters);
+        const totalUsers = await User.count(filters);
+        const totalPages = Math.ceil(totalUsers / limit);
+        const stats = await User.getStats();
+
+        res.render('admin/users', {
+            title: 'Manage Users',
+            users,
+            filters,
+            stats,
+            currentPage: page,
+            totalPages
+        });
+    } catch (error) {
+        console.error('Admin users error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to load users'
+        });
+    }
+});
+
+// Update user role
+router.post('/users/:id/role', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body;
+
+        // Validate role
+        if (!['customer', 'admin'].includes(role)) {
+            return res.status(400).json({ error: 'Invalid role' });
+        }
+
+        // Prevent demoting yourself
+        if (parseInt(id) === req.session.user.id && role !== 'admin') {
+            return res.status(400).json({ error: 'Cannot demote yourself' });
+        }
+
+        await User.update(id, { role });
+        res.json({ success: true, message: 'User role updated successfully' });
+    } catch (error) {
+        console.error('Update user role error:', error);
+        res.status(500).json({ error: 'Unable to update user role' });
+    }
+});
+
+// Delete user
+router.post('/users/:id/delete', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Prevent deleting yourself
+        if (parseInt(id) === req.session.user.id) {
+            return res.status(400).json({ error: 'Cannot delete yourself' });
+        }
+
+        await User.delete(id);
+        res.json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({ error: 'Unable to delete user' });
     }
 });
 

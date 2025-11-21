@@ -70,6 +70,75 @@ const User = {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         const query = 'UPDATE users SET password_hash = $1 WHERE id = $2';
         await pool.query(query, [hashedPassword, id]);
+    },
+
+    // Get all users with pagination
+    async findAll(limit = 50, offset = 0, filters = {}) {
+        let query = 'SELECT id, username, email, role, created_at FROM users WHERE 1=1';
+        const values = [];
+        let paramCount = 1;
+
+        if (filters.search) {
+            query += ` AND (username ILIKE $${paramCount} OR email ILIKE $${paramCount})`;
+            values.push(`%${filters.search}%`);
+            paramCount++;
+        }
+
+        if (filters.role) {
+            query += ` AND role = $${paramCount}`;
+            values.push(filters.role);
+            paramCount++;
+        }
+
+        query += ` ORDER BY created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        values.push(limit, offset);
+
+        const result = await pool.query(query, values);
+        return result.rows;
+    },
+
+    // Count total users
+    async count(filters = {}) {
+        let query = 'SELECT COUNT(*) FROM users WHERE 1=1';
+        const values = [];
+        let paramCount = 1;
+
+        if (filters.search) {
+            query += ` AND (username ILIKE $${paramCount} OR email ILIKE $${paramCount})`;
+            values.push(`%${filters.search}%`);
+            paramCount++;
+        }
+
+        if (filters.role) {
+            query += ` AND role = $${paramCount}`;
+            values.push(filters.role);
+            paramCount++;
+        }
+
+        const result = await pool.query(query, values);
+        return parseInt(result.rows[0].count);
+    },
+
+    // Delete user
+    async delete(id) {
+        // Note: This should be used with caution. Consider soft delete or archiving instead.
+        const query = 'DELETE FROM users WHERE id = $1 RETURNING id';
+        const result = await pool.query(query, [id]);
+        return result.rows[0];
+    },
+
+    // Get user statistics
+    async getStats() {
+        const query = `
+            SELECT
+                COUNT(*) as total_users,
+                COUNT(CASE WHEN role = 'admin' THEN 1 END) as admin_count,
+                COUNT(CASE WHEN role = 'customer' THEN 1 END) as customer_count,
+                COUNT(CASE WHEN created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as new_users_month
+            FROM users
+        `;
+        const result = await pool.query(query);
+        return result.rows[0];
     }
 };
 

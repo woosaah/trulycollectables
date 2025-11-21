@@ -1,0 +1,234 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>User Management</h2>
+        <a href="/admin" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-people-fill"></i> Total Users</h5>
+                    <h2 class="mb-0"><%= stats.total_users %></h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-shield-fill-check"></i> Admins</h5>
+                    <h2 class="mb-0"><%= stats.admin_count %></h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-person-fill"></i> Customers</h5>
+                    <h2 class="mb-0"><%= stats.customer_count %></h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-person-plus-fill"></i> New (30d)</h5>
+                    <h2 class="mb-0"><%= stats.new_users_month %></h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="/admin/users" class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search"
+                           value="<%= filters.search || '' %>"
+                           placeholder="Search by username or email">
+                </div>
+                <div class="col-md-4">
+                    <label for="role" class="form-label">Role</label>
+                    <select class="form-select" id="role" name="role">
+                        <option value="">All Roles</option>
+                        <option value="customer" <%= filters.role === 'customer' ? 'selected' : '' %>>Customer</option>
+                        <option value="admin" <%= filters.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (users.length === 0) { %>
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <i class="bi bi-people" style="font-size: 3rem; opacity: 0.3;"></i>
+                                    <p class="mt-2 text-muted">No users found</p>
+                                </td>
+                            </tr>
+                        <% } else { %>
+                            <% users.forEach(user => { %>
+                                <tr id="user-<%= user.id %>">
+                                    <td><%= user.id %></td>
+                                    <td>
+                                        <strong><%= user.username %></strong>
+                                        <% if (user.id === session.user.id) { %>
+                                            <span class="badge bg-secondary ms-1">You</span>
+                                        <% } %>
+                                    </td>
+                                    <td><%= user.email %></td>
+                                    <td>
+                                        <span class="badge bg-<%= user.role === 'admin' ? 'danger' : 'primary' %>">
+                                            <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <%= new Date(user.created_at).toLocaleDateString('en-NZ', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        }) %>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <!-- Change Role -->
+                                            <% if (user.id !== session.user.id) { %>
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="changeRole(<%= user.id %>, '<%= user.role === 'admin' ? 'customer' : 'admin' %>')">
+                                                    <i class="bi bi-<%= user.role === 'admin' ? 'person' : 'shield-check' %>"></i>
+                                                    Make <%= user.role === 'admin' ? 'Customer' : 'Admin' %>
+                                                </button>
+                                            <% } %>
+
+                                            <!-- Delete User -->
+                                            <% if (user.id !== session.user.id) { %>
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        onclick="deleteUser(<%= user.id %>, '<%= user.username %>')">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <% if (totalPages > 1) { %>
+                <nav aria-label="User pagination">
+                    <ul class="pagination justify-content-center mt-4">
+                        <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                            <a class="page-link" href="?page=<%= currentPage - 1 %>&search=<%= filters.search || '' %>&role=<%= filters.role || '' %>">
+                                Previous
+                            </a>
+                        </li>
+
+                        <% for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) { %>
+                            <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                                <a class="page-link" href="?page=<%= i %>&search=<%= filters.search || '' %>&role=<%= filters.role || '' %>">
+                                    <%= i %>
+                                </a>
+                            </li>
+                        <% } %>
+
+                        <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                            <a class="page-link" href="?page=<%= currentPage + 1 %>&search=<%= filters.search || '' %>&role=<%= filters.role || '' %>">
+                                Next
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function changeRole(userId, newRole) {
+        if (!confirm(`Are you sure you want to make this user an ${newRole}?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/users/${userId}/role`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ role: newRole })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to update user role');
+            }
+        } catch (error) {
+            console.error('Change role error:', error);
+            alert('An error occurred while updating user role');
+        }
+    }
+
+    async function deleteUser(userId, username) {
+        if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/users/${userId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert(data.message);
+                document.getElementById(`user-${userId}`).remove();
+            } else {
+                alert(data.error || 'Failed to delete user');
+            }
+        } catch (error) {
+            console.error('Delete user error:', error);
+            alert('An error occurred while deleting user');
+        }
+    }
+</script>
+
+<%- include('../partials/footer') %>
