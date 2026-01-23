@@ -116,7 +116,7 @@ class EmailService {
                     <p>We'll send you payment instructions shortly. If you have any questions, please don't hesitate to contact us.</p>
                 </div>
                 <div class="footer">
-                    <p>&copy; ${new Date().getFullYear()} TrulyCollectables. All rights reserved.</p>
+                    <p>&copy; ${new Date().getFullYear()} Truly Collectables. All rights reserved.</p>
                     <p>trulycollectables.co.nz</p>
                 </div>
             </body>
@@ -159,10 +159,10 @@ class EmailService {
 
                     <p>You can view your order details anytime by logging into your account.</p>
 
-                    <p>Thank you for choosing TrulyCollectables!</p>
+                    <p>Thank you for choosing Truly Collectables!</p>
                 </div>
                 <div class="footer">
-                    <p>&copy; ${new Date().getFullYear()} TrulyCollectables. All rights reserved.</p>
+                    <p>&copy; ${new Date().getFullYear()} Truly Collectables. All rights reserved.</p>
                     <p>trulycollectables.co.nz</p>
                 </div>
             </body>
@@ -204,7 +204,7 @@ class EmailService {
                     </div>
                 </div>
                 <div class="footer">
-                    <p>&copy; ${new Date().getFullYear()} TrulyCollectables. All rights reserved.</p>
+                    <p>&copy; ${new Date().getFullYear()} Truly Collectables. All rights reserved.</p>
                     <p>trulycollectables.co.nz</p>
                 </div>
             </body>
@@ -229,11 +229,11 @@ class EmailService {
             </head>
             <body>
                 <div class="header">
-                    <h1>Welcome to TrulyCollectables!</h1>
+                    <h1>Welcome to Truly Collectables!</h1>
                 </div>
                 <div class="content">
                     <p>Hi ${username},</p>
-                    <p>Thank you for joining TrulyCollectables! We're excited to have you as part of our community.</p>
+                    <p>Thank you for joining Truly Collectables! We're excited to have you as part of our community.</p>
 
                     <div class="features">
                         <h3>What you can do:</h3>
@@ -251,7 +251,7 @@ class EmailService {
                     <p>If you have any questions, feel free to reach out to us anytime!</p>
                 </div>
                 <div class="footer">
-                    <p>&copy; ${new Date().getFullYear()} TrulyCollectables. All rights reserved.</p>
+                    <p>&copy; ${new Date().getFullYear()} Truly Collectables. All rights reserved.</p>
                     <p>trulycollectables.co.nz</p>
                 </div>
             </body>
@@ -280,8 +280,8 @@ class EmailService {
 
     async sendWelcomeEmail(user) {
         const html = this.welcomeEmailTemplate(user.username);
-        await this.queueEmail(user.email, 'Welcome to TrulyCollectables!', html, 'welcome', { user });
-        return this.sendEmail(user.email, 'Welcome to TrulyCollectables!', html);
+        await this.queueEmail(user.email, 'Welcome to Truly Collectables!', html, 'welcome', { user });
+        return this.sendEmail(user.email, 'Welcome to Truly Collectables!', html);
     }
 }
 

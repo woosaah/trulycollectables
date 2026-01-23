@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Card = require('../models/Card');
 const CardImage = require('../models/CardImage');
+const Accessory = require('../models/Accessory');
 const Figurine = require('../models/Figurine');
 const Inquiry = require('../models/Inquiry');
 
@@ -12,7 +13,7 @@ router.get('/', async (req, res) => {
         const sportTypes = await Card.getSportTypes();
 
         res.render('public/home', {
-            title: 'TrulyCollectables - Trading Cards & Figurines',
+            title: 'Truly Collectables - Trading Cards & Figurines',
             featuredCards,
             sportTypes
         });
@@ -163,6 +164,46 @@ router.post('/inquiries', async (req, res) => {
     } catch (error) {
         console.error('Inquiry submission error:', error);
         res.redirect('back');
+    }
+});
+
+// Browse accessories
+router.get('/accessories', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 20;
+        const offset = (page - 1) * limit;
+
+        const filters = {
+            category: req.query.category,
+            search: req.query.search,
+            min_price: req.query.min_price,
+            max_price: req.query.max_price,
+            sort: req.query.sort || 'created_at',
+            order: req.query.order || 'desc'
+        };
+
+        const accessories = await Accessory.findAll(filters, limit, offset);
+        const totalAccessories = await Accessory.count(filters);
+        const totalPages = Math.ceil(totalAccessories / limit);
+
+        const categories = await Accessory.getCategories();
+
+        res.render('public/accessories', {
+            title: 'Card Accessories - Pages, Albums, Sleeves & More',
+            accessories,
+            categories,
+            filters,
+            currentPage: page,
+            totalPages,
+            totalAccessories
+        });
+    } catch (error) {
+        console.error('Accessories browse error:', error);
+        res.render('public/error', {
+            title: 'Error',
+            message: 'Unable to load accessories'
+        });
     }
 });
 

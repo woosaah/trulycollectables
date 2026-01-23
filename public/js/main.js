@@ -1,4 +1,4 @@
-// Main JavaScript for TrulyCollectables
+// Main JavaScript for Truly Collectables
 
 // Auto-hide alerts after 5 seconds
 document.addEventListener('DOMContentLoaded', function() {

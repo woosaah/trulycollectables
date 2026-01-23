@@ -75,10 +75,12 @@ const helmetConfig = helmet({
             fontSrc: ["'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com"],
             connectSrc: ["'self'"],
             frameSrc: ["'none'"],
-            objectSrc: ["'none'"]
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: null
         }
     },
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
+    hsts: false
 });
 
 // CSRF protection for forms
@@ -90,6 +92,8 @@ const csrfProtection = (req, res, next) => {
             req.session.csrfToken = require('crypto').randomBytes(32).toString('hex');
         }
         res.locals.csrfToken = req.session.csrfToken;
+        // Also provide a function for backward compatibility
+        req.csrfToken = () => req.session.csrfToken;
     } else if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
         // Verify token for state-changing requests
         const token = req.body._csrf || req.headers['x-csrf-token'];
@@ -97,6 +101,8 @@ const csrfProtection = (req, res, next) => {
             // Allow for now, but log
             console.warn('CSRF token mismatch');
         }
+        // Still provide the function for error handling
+        req.csrfToken = () => req.session.csrfToken || '';
     }
     next();
 };

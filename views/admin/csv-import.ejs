@@ -74,21 +74,35 @@
                                 </div>
 
                                 <div class="col-md-6 mb-3">
+                                    <label class="form-label">Manufacturer Column</label>
+                                    <input type="text" class="form-control" name="col_manufacturer"
+                                           placeholder="manufacturer" value="manufacturer">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Insert List Column</label>
+                                    <input type="text" class="form-control" name="col_insert_list"
+                                           placeholder="insert_list" value="insert_list">
+                                    <small class="text-muted">e.g., Base Set, Master, Insert, etc.</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
                                     <label class="form-label">Year Column</label>
                                     <input type="text" class="form-control" name="col_year"
                                            placeholder="year" value="year">
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Sport/Type Column</label>
-                                    <input type="text" class="form-control" name="col_sport_type"
-                                           placeholder="sport_type" value="sport_type">
+                                    <label class="form-label">Category Column</label>
+                                    <input type="text" class="form-control" name="col_card_category"
+                                           placeholder="card_category" value="card_category">
+                                    <small class="text-muted">sport or non_sport</small>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Player Name Column</label>
-                                    <input type="text" class="form-control" name="col_player_name"
-                                           placeholder="player_name" value="player_name">
+                                    <label class="form-label">Sport/Type Column</label>
+                                    <input type="text" class="form-control" name="col_sport_type"
+                                           placeholder="sport_type" value="sport_type">
                                 </div>
 
                                 <div class="col-md-6 mb-3">
@@ -111,9 +125,17 @@
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Rarity Column</label>
-                                    <input type="text" class="form-control" name="col_rarity"
-                                           placeholder="rarity" value="rarity">
+                                    <label class="form-label">Image Front Column</label>
+                                    <input type="text" class="form-control" name="col_image_front"
+                                           placeholder="image_front" value="image_front">
+                                    <small class="text-muted">URL or path to front image</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Image Back Column</label>
+                                    <input type="text" class="form-control" name="col_image_back"
+                                           placeholder="image_back" value="image_back">
+                                    <small class="text-muted">URL or path to back image</small>
                                 </div>
 
                                 <div class="col-md-12 mb-3">
@@ -139,10 +161,10 @@
                     <h5 class="mb-0">CSV Format Example</h5>
                 </div>
                 <div class="card-body">
-                    <pre class="bg-light p-3 rounded"><code>card_name,set_name,card_number,year,sport_type,player_name,condition,price_nzd,quantity,rarity,description
-Michael Jordan Rookie,1986 Fleer,57,1986,basketball,Michael Jordan,near_mint,125.00,1,rare,Iconic rookie card
-Pikachu,Base Set,58,1999,pokemon,Pikachu,mint,45.00,3,common,Classic Pokemon card
-Black Lotus,Alpha,1,1993,magic,N/A,excellent,15000.00,1,mythic,Power Nine card</code></pre>
+                    <pre class="bg-light p-3 rounded"><code>card_name,set_name,card_number,manufacturer,insert_list,year,card_category,sport_type,condition,price_nzd,quantity,image_front,image_back,description
+Michael Jordan Rookie,1986 Fleer Basketball,57,Fleer,Base Set,1986,sport,Basketball,near_mint,125.00,1,,,Iconic rookie card in excellent condition
+Pikachu,Base Set,58,Wizards of the Coast,Common,1999,non_sport,Pokemon,mint,45.00,3,,,Classic Pokemon card from the original base set
+Lewis Hamilton Podium Power,F1 2023 Season,44,Topps,Master Set,2023,sport,Other,mint,15.00,2,,,F1 racing card featuring Lewis Hamilton</code></pre>
                 </div>
             </div>
         </div>

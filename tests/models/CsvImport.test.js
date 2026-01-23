@@ -191,6 +191,8 @@ describe('CsvImport Model', () => {
       expect(template.sample).toBeDefined();
       expect(template.csv).toBeDefined();
       expect(template.headers).toContain('card_name');
+      expect(template.headers).toContain('manufacturer');
+      expect(template.headers).toContain('insert_list');
       expect(template.headers).toContain('price_nzd');
       expect(template.csv).toContain('card_name');
     });
@@ -200,6 +202,8 @@ describe('CsvImport Model', () => {
 
       expect(template.headers).toContain('card_name');
       expect(template.headers).toContain('set_name');
+      expect(template.headers).toContain('manufacturer');
+      expect(template.headers).toContain('insert_list');
       expect(template.headers).toContain('year');
       expect(template.headers).toContain('condition');
       expect(template.headers).toContain('price_nzd');

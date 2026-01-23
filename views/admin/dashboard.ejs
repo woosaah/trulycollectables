@@ -4,7 +4,7 @@
     <h2 class="mb-4">Admin Dashboard</h2>
 
     <div class="row g-4 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card bg-warning text-white">
                 <div class="card-body">
                     <h3><%= pendingOrdersCount %></h3>
@@ -14,7 +14,7 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card bg-info text-white">
                 <div class="card-body">
                     <h3><%= pendingFigurinesCount %></h3>
@@ -24,12 +24,22 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card bg-primary text-white">
                 <div class="card-body">
                     <h3><%= newInquiriesCount %></h3>
                     <p class="mb-0">New Inquiries</p>
                     <a href="/admin/inquiries?status=new" class="btn btn-light mt-3">View Inquiries</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h3><i class="bi bi-star-fill"></i></h3>
+                    <p class="mb-0">User Wants</p>
+                    <a href="/admin/wants" class="btn btn-light mt-3">View Wants</a>
                 </div>
             </div>
         </div>
@@ -43,6 +53,10 @@
                     <div class="d-flex flex-wrap gap-2">
                         <a href="/admin/cards" class="btn btn-primary">Manage Cards</a>
                         <a href="/admin/cards/add" class="btn btn-primary">Add Card</a>
+                        <a href="/admin/accessories" class="btn btn-success">Manage Accessories</a>
+                        <a href="/admin/wants" class="btn btn-danger">
+                            <i class="bi bi-star-fill"></i> User Wants
+                        </a>
                         <a href="/admin/orders" class="btn btn-primary">Manage Orders</a>
                         <a href="/admin/figurines" class="btn btn-primary">Manage Figurines</a>
                         <a href="/admin/inquiries" class="btn btn-primary">Manage Inquiries</a>

@@ -1,0 +1,138 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>User Wanted Cards</h2>
+        <div>
+            <span class="badge bg-info fs-6"><%= wantedCards.length %> Total Wants</span>
+        </div>
+    </div>
+
+    <!-- Most Wanted Summary -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-star-fill"></i> Most Wanted Cards
+            </h5>
+            <small>Priority cards to acquire for your inventory</small>
+        </div>
+        <div class="card-body">
+            <% if (mostWanted && mostWanted.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>Card Name</th>
+                            <th>Set</th>
+                            <th>Manufacturer</th>
+                            <th>Insert</th>
+                            <th>Type</th>
+                            <th>Users Wanting</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% mostWanted.forEach(card => { %>
+                        <tr>
+                            <td><strong><%= card.card_name %></strong></td>
+                            <td><%= card.set_name || '-' %></td>
+                            <td><%= card.manufacturer || '-' %></td>
+                            <td><%= card.insert_list || 'Base' %></td>
+                            <td><span class="badge bg-secondary"><%= card.sport_type || '-' %></span></td>
+                            <td class="small"><%= card.users_wanting %></td>
+                            <td>
+                                <span class="badge bg-danger"><%= card.user_count %> user<%= card.user_count > 1 ? 's' : '' %></span>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            <% } else { %>
+            <p class="text-muted text-center py-3">No wanted cards yet</p>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- All Wanted Cards -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-list-ul"></i> All User Wants
+            </h5>
+        </div>
+        <div class="card-body">
+            <% if (wantedCards && wantedCards.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Card Name</th>
+                            <th>Set</th>
+                            <th>Manufacturer</th>
+                            <th>Insert</th>
+                            <th>Number</th>
+                            <th>Year</th>
+                            <th>Type</th>
+                            <th>Notes</th>
+                            <th>Added</th>
+                            <th>Popularity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% wantedCards.forEach(want => { %>
+                        <tr>
+                            <td>
+                                <div>
+                                    <strong><%= want.username %></strong>
+                                    <br>
+                                    <small class="text-muted"><%= want.email %></small>
+                                </div>
+                            </td>
+                            <td><strong><%= want.card_name %></strong></td>
+                            <td><%= want.set_name || '-' %></td>
+                            <td><%= want.manufacturer || '-' %></td>
+                            <td><%= want.insert_list || 'Base' %></td>
+                            <td><%= want.card_number || '-' %></td>
+                            <td><%= want.year || '-' %></td>
+                            <td>
+                                <% if (want.sport_type) { %>
+                                <span class="badge bg-info"><%= want.sport_type %></span>
+                                <% } else { %>
+                                -
+                                <% } %>
+                            </td>
+                            <td class="small"><%= want.notes || '-' %></td>
+                            <td class="small"><%= new Date(want.created_at).toLocaleDateString() %></td>
+                            <td>
+                                <% if (want.want_count > 1) { %>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-people-fill"></i> <%= want.want_count %>
+                                </span>
+                                <% } else { %>
+                                <span class="badge bg-light text-dark">1</span>
+                                <% } %>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+            <% } else { %>
+            <div class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="text-muted mt-2">No users have added wanted cards yet</p>
+            </div>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-4">
+        <i class="bi bi-info-circle"></i>
+        <strong>Buying Tip:</strong> Focus on acquiring cards with higher "Users Wanting" counts.
+        These are guaranteed sales and will satisfy multiple customers.
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

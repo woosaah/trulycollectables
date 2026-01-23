@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { requireAdmin } = require('../middleware/auth');
+const pool = require('../config/database');
 const Card = require('../models/Card');
 const CardImage = require('../models/CardImage');
+const Accessory = require('../models/Accessory');
 const Figurine = require('../models/Figurine');
 const Order = require('../models/Order');
 const Inquiry = require('../models/Inquiry');
+const Collection = require('../models/Collection');
 const CsvImport = require('../models/CsvImport');
 const TestRunner = require('../services/TestRunner');
 const { body, validationResult } = require('express-validator');
@@ -65,6 +68,172 @@ router.get('/', async (req, res) => {
     }
 });
 
+// === MANUFACTURER & SET MANAGEMENT API ===
+
+// Get all manufacturers
+router.get('/api/manufacturers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name FROM manufacturers ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Get manufacturers error:', error);
+        res.status(500).json({ error: 'Failed to fetch manufacturers' });
+    }
+});
+
+// Add new manufacturer
+router.post('/api/manufacturers', async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ error: 'Manufacturer name is required' });
+        }
+
+        const result = await pool.query(
+            'INSERT INTO manufacturers (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id, name',
+            [name.trim()]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Add manufacturer error:', error);
+        res.status(500).json({ error: 'Failed to add manufacturer' });
+    }
+});
+
+// Get sets by manufacturer
+router.get('/api/manufacturers/:id/sets', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, set_name, year FROM card_sets WHERE manufacturer_id = $1 ORDER BY set_name',
+            [req.params.id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Get sets error:', error);
+        res.status(500).json({ error: 'Failed to fetch sets' });
+    }
+});
+
+// Add new set
+router.post('/api/sets', async (req, res) => {
+    try {
+        const { manufacturer_id, set_name, year } = req.body;
+        if (!manufacturer_id || !set_name || set_name.trim() === '') {
+            return res.status(400).json({ error: 'Manufacturer and set name are required' });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO card_sets (manufacturer_id, set_name, year)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (manufacturer_id, set_name)
+             DO UPDATE SET year = EXCLUDED.year
+             RETURNING id, set_name, year`,
+            [manufacturer_id, set_name.trim(), year || null]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Add set error:', error);
+        res.status(500).json({ error: 'Failed to add set' });
+    }
+});
+
+// Get inserts by set
+router.get('/api/sets/:id/inserts', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, insert_name, description FROM card_inserts WHERE card_set_id = $1 ORDER BY insert_name',
+            [req.params.id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Get inserts error:', error);
+        res.status(500).json({ error: 'Failed to fetch inserts' });
+    }
+});
+
+// Add new insert
+router.post('/api/inserts', async (req, res) => {
+    try {
+        const { card_set_id, insert_name, description } = req.body;
+        if (!card_set_id || !insert_name || insert_name.trim() === '') {
+            return res.status(400).json({ error: 'Set and insert name are required' });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO card_inserts (card_set_id, insert_name, description)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (card_set_id, insert_name)
+             DO UPDATE SET description = EXCLUDED.description
+             RETURNING id, insert_name, description`,
+            [card_set_id, insert_name.trim(), description || null]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Add insert error:', error);
+        res.status(500).json({ error: 'Failed to add insert' });
+    }
+});
+
+// === SPORT TYPES API ===
+
+// Get all sport types
+router.get('/api/sport-types', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name FROM sport_types ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Get sport types error:', error);
+        res.status(500).json({ error: 'Failed to fetch sport types' });
+    }
+});
+
+// Add new sport type
+router.post('/api/sport-types', async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ error: 'Sport type name is required' });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO sport_types (name)
+             VALUES ($1)
+             ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+             RETURNING id, name`,
+            [name.trim()]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Add sport type error:', error);
+        res.status(500).json({ error: 'Failed to add sport type' });
+    }
+});
+
+// === USER WANTS/COLLECTIONS ===
+
+// View all wanted cards
+router.get('/wants', async (req, res) => {
+    try {
+        const wantedCards = await Collection.getAllWanted();
+        const mostWanted = await Collection.getMostWanted(10);
+
+        res.render('admin/wants', {
+            title: 'User Wanted Cards',
+            user: req.session.user,
+            wantedCards,
+            mostWanted
+        });
+    } catch (error) {
+        console.error('Get wanted cards error:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            user: req.session.user,
+            isAdmin: true,
+            message: 'Unable to load wanted cards'
+        });
+    }
+});
+
 // === CARD INVENTORY MANAGEMENT ===
 
 // List all cards
@@ -79,8 +248,8 @@ router.get('/cards', async (req, res) => {
             sport_type: req.query.sport_type
         };
 
-        const cards = await Card.findAll(filters, limit, offset);
-        const totalCards = await Card.count(filters);
+        const cards = await Card.findAll(filters, limit, offset, true); // Include unavailable cards for admin
+        const totalCards = await Card.count(filters, true); // Include unavailable cards for admin
         const totalPages = Math.ceil(totalCards / limit);
         const sportTypes = await Card.getSportTypes();
 
@@ -489,13 +658,16 @@ router.post('/csv-import/upload', csvUpload.single('csv_file'), async (req, res)
             card_name: req.body.col_card_name || 'card_name',
             set_name: req.body.col_set_name || 'set_name',
             card_number: req.body.col_card_number || 'card_number',
+            manufacturer: req.body.col_manufacturer || 'manufacturer',
+            insert_list: req.body.col_insert_list || 'insert_list',
             year: req.body.col_year || 'year',
+            card_category: req.body.col_card_category || 'card_category',
             sport_type: req.body.col_sport_type || 'sport_type',
-            player_name: req.body.col_player_name || 'player_name',
             condition: req.body.col_condition || 'condition',
             price_nzd: req.body.col_price_nzd || 'price_nzd',
             quantity: req.body.col_quantity || 'quantity',
-            rarity: req.body.col_rarity || 'rarity',
+            image_front: req.body.col_image_front || 'image_front',
+            image_back: req.body.col_image_back || 'image_back',
             description: req.body.col_description || 'description'
         };
 
@@ -700,6 +872,179 @@ router.get('/tests/coverage', (req, res) => {
             title: 'Error',
             message: 'Unable to load coverage report'
         });
+    }
+});
+
+// ===== ACCESSORIES MANAGEMENT =====
+
+// List all accessories
+router.get('/accessories', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = 20;
+        const offset = (page - 1) * limit;
+
+        const filters = {
+            search: req.query.search,
+            category: req.query.category
+        };
+
+        const [accessories, totalAccessories, categories] = await Promise.all([
+            Accessory.findAll(filters, limit, offset, true),
+            Accessory.count(filters, true),
+            Accessory.getCategories()
+        ]);
+
+        const totalPages = Math.ceil(totalAccessories / limit);
+
+        res.render('admin/accessories', {
+            title: 'Manage Accessories',
+            accessories,
+            categories,
+            filters,
+            currentPage: page,
+            totalPages,
+            totalAccessories
+        });
+    } catch (error) {
+        console.error('Accessories list error:', error);
+        res.render('public/error', { title: 'Error', message: 'Unable to load accessories' });
+    }
+});
+
+// Show add accessory form
+router.get('/accessories/add', (req, res) => {
+    res.render('admin/accessory-add', {
+        title: 'Add Accessory',
+        errors: []
+    });
+});
+
+// Add accessory
+router.post('/accessories/add',
+    upload.single('image'),
+    [
+        body('product_name').trim().notEmpty().withMessage('Product name is required'),
+        body('price_nzd').isFloat({ min: 0 }).withMessage('Valid price is required'),
+        body('quantity').isInt({ min: 0 }).withMessage('Valid quantity is required')
+    ],
+    async (req, res) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.render('admin/accessory-add', {
+                    title: 'Add Accessory',
+                    errors: errors.array()
+                });
+            }
+
+            const accessoryData = {
+                product_name: req.body.product_name,
+                category: req.body.category,
+                description: req.body.description,
+                price_nzd: req.body.price_nzd,
+                quantity: req.body.quantity,
+                manufacturer: req.body.manufacturer,
+                image_url: req.file ? `/uploads/${req.file.filename}` : null
+            };
+
+            await Accessory.create(accessoryData);
+            res.redirect('/admin/accessories?success=added');
+        } catch (error) {
+            console.error('Add accessory error:', error);
+            res.render('admin/accessory-add', {
+                title: 'Add Accessory',
+                errors: [{ msg: 'Failed to add accessory' }]
+            });
+        }
+    }
+);
+
+// Show edit accessory form
+router.get('/accessories/:id/edit', async (req, res) => {
+    try {
+        const accessory = await Accessory.findById(req.params.id);
+        if (!accessory) {
+            return res.redirect('/admin/accessories?error=not_found');
+        }
+
+        res.render('admin/accessory-edit', {
+            title: 'Edit Accessory',
+            accessory,
+            errors: []
+        });
+    } catch (error) {
+        console.error('Edit accessory form error:', error);
+        res.redirect('/admin/accessories?error=load_failed');
+    }
+});
+
+// Update accessory
+router.post('/accessories/:id/edit',
+    upload.single('image'),
+    [
+        body('product_name').trim().notEmpty().withMessage('Product name is required'),
+        body('price_nzd').isFloat({ min: 0 }).withMessage('Valid price is required'),
+        body('quantity').isInt({ min: 0 }).withMessage('Valid quantity is required')
+    ],
+    async (req, res) => {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                const accessory = await Accessory.findById(req.params.id);
+                return res.render('admin/accessory-edit', {
+                    title: 'Edit Accessory',
+                    accessory,
+                    errors: errors.array()
+                });
+            }
+
+            const updates = {
+                product_name: req.body.product_name,
+                category: req.body.category,
+                description: req.body.description,
+                price_nzd: req.body.price_nzd,
+                quantity: req.body.quantity,
+                manufacturer: req.body.manufacturer
+            };
+
+            if (req.file) {
+                updates.image_url = `/uploads/${req.file.filename}`;
+            }
+
+            await Accessory.update(req.params.id, updates);
+            res.redirect('/admin/accessories?success=updated');
+        } catch (error) {
+            console.error('Update accessory error:', error);
+            const accessory = await Accessory.findById(req.params.id);
+            res.render('admin/accessory-edit', {
+                title: 'Edit Accessory',
+                accessory,
+                errors: [{ msg: 'Failed to update accessory' }]
+            });
+        }
+    }
+);
+
+// Delete accessory
+router.post('/accessories/:id/delete', async (req, res) => {
+    try {
+        await Accessory.delete(req.params.id);
+        res.redirect('/admin/accessories?success=deleted');
+    } catch (error) {
+        console.error('Delete accessory error:', error);
+        res.redirect('/admin/accessories?error=delete_failed');
+    }
+});
+
+// Toggle availability
+router.post('/accessories/:id/toggle-availability', async (req, res) => {
+    try {
+        await Accessory.toggleAvailability(req.params.id);
+        res.redirect('/admin/accessories');
+    } catch (error) {
+        console.error('Toggle availability error:', error);
+        res.redirect('/admin/accessories?error=toggle_failed');
     }
 });
 

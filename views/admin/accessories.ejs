@@ -1,0 +1,106 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Accessories</h2>
+        <a href="/admin/accessories/add" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Accessory
+        </a>
+    </div>
+
+    <% if (typeof req !== 'undefined' && req.query.success) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle"></i> Accessory <%= req.query.success %>!
+    </div>
+    <% } %>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/admin/accessories" method="GET" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Search accessories...">
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" name="category">
+                        <option value="">All Categories</option>
+                        <% categories.forEach(category => { %>
+                        <option value="<%= category %>" <%= filters.category === category ? 'selected' : '' %>><%= category %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <% if (accessories && accessories.length > 0) { %>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Manufacturer</th>
+                    <th>Price</th>
+                    <th>Qty</th>
+                    <th>Available</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% accessories.forEach(accessory => { %>
+                <tr>
+                    <td><strong><%= accessory.product_name %></strong></td>
+                    <td><%= accessory.category || '-' %></td>
+                    <td><%= accessory.manufacturer || '-' %></td>
+                    <td>$<%= accessory.price_nzd.toFixed(2) %></td>
+                    <td><%= accessory.quantity %></td>
+                    <td>
+                        <form action="/admin/accessories/<%= accessory.id %>/toggle-availability" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm <%= accessory.available ? 'btn-success' : 'btn-secondary' %>">
+                                <%= accessory.available ? 'Yes' : 'No' %>
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        <a href="/admin/accessories/<%= accessory.id %>/edit" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <form action="/admin/accessories/<%= accessory.id %>/delete" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirmDelete('Delete this accessory?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage - 1 %><%= filters.search ? '&search=' + filters.search : '' %><%= filters.category ? '&category=' + filters.category : '' %>">Previous</a>
+            </li>
+            <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                <a class="page-link" href="?page=<%= i %><%= filters.search ? '&search=' + filters.search : '' %><%= filters.category ? '&category=' + filters.category : '' %>"><%= i %></a>
+            </li>
+            <% } %>
+            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage + 1 %><%= filters.search ? '&search=' + filters.search : '' %><%= filters.category ? '&category=' + filters.category : '' %>">Next</a>
+            </li>
+        </ul>
+    </nav>
+    <% } %>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No accessories found.
+    </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

@@ -66,17 +66,17 @@ class CsvImport {
       card_name: columnMapping.card_name || 'card_name',
       set_name: columnMapping.set_name || 'set_name',
       card_number: columnMapping.card_number || 'card_number',
+      manufacturer: columnMapping.manufacturer || 'manufacturer',
+      insert_list: columnMapping.insert_list || 'insert_list',
       year: columnMapping.year || 'year',
+      card_category: columnMapping.card_category || 'card_category',
       sport_type: columnMapping.sport_type || 'sport_type',
       condition: columnMapping.condition || 'condition',
       price_nzd: columnMapping.price_nzd || 'price_nzd',
       quantity: columnMapping.quantity || 'quantity',
-      description: columnMapping.description || 'description',
-      player_name: columnMapping.player_name || 'player_name',
-      rarity: columnMapping.rarity || 'rarity',
-      graded: columnMapping.graded || 'graded',
-      grade_company: columnMapping.grade_company || 'grade_company',
-      grade_value: columnMapping.grade_value || 'grade_value'
+      image_front: columnMapping.image_front || 'image_front',
+      image_back: columnMapping.image_back || 'image_back',
+      description: columnMapping.description || 'description'
     };
 
     for (const [dbField, csvField] of Object.entries(fieldMap)) {
@@ -97,6 +97,12 @@ class CsvImport {
     // Required fields
     if (!row.card_name || row.card_name.trim() === '') {
       errors.push('Card name is required');
+    }
+
+    // Validate card_category
+    const validCategories = ['sport', 'non_sport'];
+    if (row.card_category && !validCategories.includes(row.card_category.toLowerCase())) {
+      errors.push(`Invalid category: ${row.card_category}. Must be one of: ${validCategories.join(', ')}`);
     }
 
     // Validate year
@@ -127,14 +133,6 @@ class CsvImport {
     const validConditions = ['mint', 'near_mint', 'excellent', 'good', 'played'];
     if (row.condition && !validConditions.includes(row.condition.toLowerCase())) {
       errors.push(`Invalid condition: ${row.condition}. Must be one of: ${validConditions.join(', ')}`);
-    }
-
-    // Validate graded
-    if (row.graded) {
-      const graded = row.graded.toLowerCase();
-      if (!['true', 'false', 'yes', 'no', '1', '0'].includes(graded)) {
-        errors.push(`Invalid graded value: ${row.graded}`);
-      }
     }
 
     return {
@@ -307,9 +305,9 @@ class CsvImport {
   static async insertCard(client, row, userId) {
     const query = `
       INSERT INTO cards (
-        card_name, set_name, card_number, year, sport_type,
-        condition, price_nzd, quantity, description, player_name,
-        rarity, graded, grade_company, grade_value, available
+        card_name, set_name, card_number, manufacturer, insert_list,
+        year, card_category, sport_type, condition, price_nzd, quantity,
+        image_front, image_back, description, available
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true)
       RETURNING id
     `;
@@ -318,17 +316,17 @@ class CsvImport {
       row.card_name,
       row.set_name || null,
       row.card_number || null,
+      row.manufacturer || null,
+      row.insert_list || null,
       row.year ? parseInt(row.year) : null,
+      row.card_category ? row.card_category.toLowerCase() : null,
       row.sport_type || null,
       row.condition ? row.condition.toLowerCase() : null,
       row.price_nzd ? parseFloat(row.price_nzd) : null,
       row.quantity ? parseInt(row.quantity) : 1,
-      row.description || null,
-      row.player_name || null,
-      row.rarity || null,
-      row.graded ? ['true', 'yes', '1'].includes(row.graded.toLowerCase()) : false,
-      row.grade_company || null,
-      row.grade_value || null
+      row.image_front || null,
+      row.image_back || null,
+      row.description || null
     ];
 
     const result = await client.query(query, values);
@@ -346,17 +344,17 @@ class CsvImport {
       SET card_name = $1,
           set_name = $2,
           card_number = $3,
-          year = $4,
-          sport_type = $5,
-          condition = $6,
-          price_nzd = $7,
-          quantity = $8,
-          description = $9,
-          player_name = $10,
-          rarity = $11,
-          graded = $12,
-          grade_company = $13,
-          grade_value = $14
+          manufacturer = $4,
+          insert_list = $5,
+          year = $6,
+          card_category = $7,
+          sport_type = $8,
+          condition = $9,
+          price_nzd = $10,
+          quantity = $11,
+          image_front = $12,
+          image_back = $13,
+          description = $14
       WHERE id = $15
     `;
 
@@ -364,17 +362,17 @@ class CsvImport {
       row.card_name,
       row.set_name || null,
       row.card_number || null,
+      row.manufacturer || null,
+      row.insert_list || null,
       row.year ? parseInt(row.year) : null,
+      row.card_category ? row.card_category.toLowerCase() : null,
       row.sport_type || null,
       row.condition ? row.condition.toLowerCase() : null,
       row.price_nzd ? parseFloat(row.price_nzd) : null,
       row.quantity ? parseInt(row.quantity) : 1,
+      row.image_front || null,
+      row.image_back || null,
       row.description || null,
-      row.player_name || null,
-      row.rarity || null,
-      row.graded ? ['true', 'yes', '1'].includes(row.graded.toLowerCase()) : false,
-      row.grade_company || null,
-      row.grade_value || null,
       cardId
     ];
 
@@ -434,40 +432,86 @@ class CsvImport {
       'card_name',
       'set_name',
       'card_number',
+      'manufacturer',
+      'insert_list',
       'year',
+      'card_category',
       'sport_type',
-      'player_name',
       'condition',
       'price_nzd',
       'quantity',
-      'rarity',
-      'graded',
-      'grade_company',
-      'grade_value',
+      'image_front',
+      'image_back',
       'description'
     ];
 
-    const sample = [
-      'Michael Jordan Rookie',
-      '1986 Fleer',
-      '57',
-      '1986',
-      'basketball',
-      'Michael Jordan',
-      'near_mint',
-      '125.00',
-      '1',
-      'rare',
-      'yes',
-      'PSA',
-      '8',
-      'Iconic rookie card in excellent condition'
+    const sampleRows = [
+      [
+        'Michael Jordan Rookie',
+        '1986 Fleer Basketball',
+        '57',
+        'Fleer',
+        'Base Set',
+        '1986',
+        'sport',
+        'Basketball',
+        'near_mint',
+        '125.00',
+        '1',
+        '',
+        '',
+        'Iconic rookie card in excellent condition'
+      ],
+      [
+        'Pikachu',
+        'Base Set',
+        '58',
+        'Wizards of the Coast',
+        'Common',
+        '1999',
+        'non_sport',
+        'Pokemon',
+        'mint',
+        '45.00',
+        '3',
+        '',
+        '',
+        'Classic Pokemon card from the original base set'
+      ],
+      [
+        'Lewis Hamilton Podium Power',
+        'F1 2023 Season',
+        '44',
+        'Topps',
+        'Master Set',
+        '2023',
+        'sport',
+        'Other',
+        'mint',
+        '15.00',
+        '2',
+        '',
+        '',
+        'F1 racing card featuring Lewis Hamilton'
+      ]
     ];
+
+    const csvLines = [headers.join(',')];
+    sampleRows.forEach(row => {
+      // Properly escape CSV values that contain commas or quotes
+      const escapedRow = row.map(value => {
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      });
+      csvLines.push(escapedRow.join(','));
+    });
 
     return {
       headers,
-      sample,
-      csv: headers.join(',') + '\n' + sample.join(',')
+      sampleRows,
+      csv: csvLines.join('\n')
     };
   }
 }

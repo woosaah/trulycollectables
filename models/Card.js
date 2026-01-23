@@ -1,35 +1,56 @@
 const pool = require('../config/database');
 
 const Card = {
+    // Helper function to normalize card data (convert string numbers to actual numbers)
+    normalizeCard(card) {
+        if (!card) return null;
+        return {
+            ...card,
+            price_nzd: card.price_nzd ? parseFloat(card.price_nzd) : null,
+            quantity: card.quantity ? parseInt(card.quantity) : 0,
+            year: card.year ? parseInt(card.year) : null
+        };
+    },
+
+    normalizeCards(cards) {
+        return cards.map(card => this.normalizeCard(card));
+    },
+
     // Create a new card
     async create(cardData) {
         const {
-            card_name, set_name, card_number, year, sport_type,
+            card_name, set_name, card_number, year, card_category, sport_type, manufacturer, insert_list,
             condition, price_nzd, quantity, image_front, image_back, description
         } = cardData;
 
         const query = `
             INSERT INTO cards (
-                card_name, set_name, card_number, year, sport_type,
+                card_name, set_name, card_number, year, card_category, sport_type, manufacturer, insert_list,
                 condition, price_nzd, quantity, image_front, image_back, description
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING *
         `;
 
         const result = await pool.query(query, [
-            card_name, set_name, card_number, year, sport_type,
+            card_name, set_name, card_number, year, card_category, sport_type, manufacturer, insert_list,
             condition, price_nzd, quantity, image_front, image_back, description
         ]);
 
-        return result.rows[0];
+        return this.normalizeCard(result.rows[0]);
     },
 
     // Get all cards with pagination and filters
-    async findAll(filters = {}, limit = 20, offset = 0) {
-        let query = 'SELECT * FROM cards WHERE available = true';
+    async findAll(filters = {}, limit = 20, offset = 0, includeUnavailable = false) {
+        let query = includeUnavailable ? 'SELECT * FROM cards WHERE 1=1' : 'SELECT * FROM cards WHERE available = true';
         const params = [];
         let paramCount = 1;
+
+        if (filters.card_category) {
+            query += ` AND card_category = $${paramCount}`;
+            params.push(filters.card_category);
+            paramCount++;
+        }
 
         if (filters.sport_type) {
             query += ` AND sport_type = $${paramCount}`;
@@ -67,8 +88,14 @@ const Card = {
             paramCount++;
         }
 
+        if (filters.manufacturer) {
+            query += ` AND manufacturer ILIKE $${paramCount}`;
+            params.push(`%${filters.manufacturer}%`);
+            paramCount++;
+        }
+
         if (filters.search) {
-            query += ` AND (card_name ILIKE $${paramCount} OR set_name ILIKE $${paramCount} OR card_number ILIKE $${paramCount})`;
+            query += ` AND (card_name ILIKE $${paramCount} OR set_name ILIKE $${paramCount} OR card_number ILIKE $${paramCount} OR manufacturer ILIKE $${paramCount})`;
             params.push(`%${filters.search}%`);
             paramCount++;
         }
@@ -83,14 +110,20 @@ const Card = {
         params.push(limit, offset);
 
         const result = await pool.query(query, params);
-        return result.rows;
+        return this.normalizeCards(result.rows);
     },
 
     // Get total count of cards (for pagination)
-    async count(filters = {}) {
-        let query = 'SELECT COUNT(*) FROM cards WHERE available = true';
+    async count(filters = {}, includeUnavailable = false) {
+        let query = includeUnavailable ? 'SELECT COUNT(*) FROM cards WHERE 1=1' : 'SELECT COUNT(*) FROM cards WHERE available = true';
         const params = [];
         let paramCount = 1;
+
+        if (filters.card_category) {
+            query += ` AND card_category = $${paramCount}`;
+            params.push(filters.card_category);
+            paramCount++;
+        }
 
         if (filters.sport_type) {
             query += ` AND sport_type = $${paramCount}`;
@@ -112,7 +145,7 @@ const Card = {
     async findById(id) {
         const query = 'SELECT * FROM cards WHERE id = $1';
         const result = await pool.query(query, [id]);
-        return result.rows[0];
+        return this.normalizeCard(result.rows[0]);
     },
 
     // Update card
@@ -138,7 +171,7 @@ const Card = {
         `;
 
         const result = await pool.query(query, values);
-        return result.rows[0];
+        return this.normalizeCard(result.rows[0]);
     },
 
     // Delete card
@@ -161,6 +194,13 @@ const Card = {
         return result.rows.map(row => row.set_name);
     },
 
+    // Get unique manufacturers
+    async getManufacturers() {
+        const query = 'SELECT DISTINCT manufacturer FROM cards WHERE manufacturer IS NOT NULL ORDER BY manufacturer';
+        const result = await pool.query(query);
+        return result.rows.map(row => row.manufacturer);
+    },
+
     // Get featured cards (most recent)
     async getFeatured(limit = 6) {
         const query = `
@@ -170,7 +210,7 @@ const Card = {
             LIMIT $1
         `;
         const result = await pool.query(query, [limit]);
-        return result.rows;
+        return this.normalizeCards(result.rows);
     }
 };
 

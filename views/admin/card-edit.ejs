@@ -35,36 +35,77 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="set_name" class="form-label">Set Name</label>
-                                <input type="text" class="form-control" id="set_name" name="set_name"
-                                       value="<%= card.set_name || '' %>">
+                                <label for="manufacturer" class="form-label">Manufacturer</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="manufacturer" name="manufacturer" data-current="<%= card.manufacturer || '' %>">
+                                        <option value="">Loading...</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary" type="button" id="addManufacturerBtn">
+                                        <i class="bi bi-plus"></i> New
+                                    </button>
+                                </div>
                             </div>
 
+                            <div class="col-md-6 mb-3">
+                                <label for="set_name" class="form-label">Set Name</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="set_name" name="set_name" data-current="<%= card.set_name || '' %>" disabled>
+                                        <option value="">Select manufacturer first</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary" type="button" id="addSetBtn" disabled>
+                                        <i class="bi bi-plus"></i> New
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="insert_list" class="form-label">Insert/Subset (Optional)</label>
+                            <div class="input-group">
+                                <select class="form-select" id="insert_list" name="insert_list" data-current="<%= card.insert_list || '' %>" disabled>
+                                    <option value="">Select set first</option>
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" id="addInsertBtn" disabled>
+                                    <i class="bi bi-plus"></i> New
+                                </button>
+                            </div>
+                            <small class="text-muted">e.g., Master, Double Trouble, Rookies, etc.</small>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="card_number" class="form-label">Card Number</label>
                                 <input type="text" class="form-control" id="card_number" name="card_number"
                                        value="<%= card.card_number || '' %>">
                             </div>
-                        </div>
 
-                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="year" class="form-label">Year</label>
                                 <input type="number" class="form-control" id="year" name="year"
                                        value="<%= card.year || '' %>">
                             </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="card_category" class="form-label">Category *</label>
+                                <select class="form-select" id="card_category" name="card_category" required>
+                                    <option value="">Select Category...</option>
+                                    <option value="sport" <%= card.card_category === 'sport' ? 'selected' : '' %>>Sport</option>
+                                    <option value="non_sport" <%= card.card_category === 'non_sport' ? 'selected' : '' %>>Non-Sport</option>
+                                </select>
+                            </div>
 
                             <div class="col-md-6 mb-3">
                                 <label for="sport_type" class="form-label">Sport/Type</label>
-                                <select class="form-select" id="sport_type" name="sport_type">
-                                    <option value="">Select...</option>
-                                    <option value="basketball" <%= card.sport_type === 'basketball' ? 'selected' : '' %>>Basketball</option>
-                                    <option value="pokemon" <%= card.sport_type === 'pokemon' ? 'selected' : '' %>>Pokemon</option>
-                                    <option value="magic" <%= card.sport_type === 'magic' ? 'selected' : '' %>>Magic: The Gathering</option>
-                                    <option value="baseball" <%= card.sport_type === 'baseball' ? 'selected' : '' %>>Baseball</option>
-                                    <option value="football" <%= card.sport_type === 'football' ? 'selected' : '' %>>Football</option>
-                                    <option value="other" <%= card.sport_type === 'other' ? 'selected' : '' %>>Other</option>
-                                </select>
+                                <div class="input-group">
+                                    <select class="form-select" id="sport_type" name="sport_type" data-current="<%= card.sport_type || '' %>">
+                                        <option value="">Loading...</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary" type="button" id="addSportTypeBtn">
+                                        <i class="bi bi-plus"></i> New
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -191,6 +232,319 @@
 </div>
 
 <script>
+// Cascading dropdowns for Manufacturer -> Set Name -> Insert
+document.addEventListener('DOMContentLoaded', function() {
+    const manufacturerSelect = document.getElementById('manufacturer');
+    const setNameSelect = document.getElementById('set_name');
+    const insertListSelect = document.getElementById('insert_list');
+    const sportTypeSelect = document.getElementById('sport_type');
+    const addManufacturerBtn = document.getElementById('addManufacturerBtn');
+    const addSetBtn = document.getElementById('addSetBtn');
+    const addInsertBtn = document.getElementById('addInsertBtn');
+    const addSportTypeBtn = document.getElementById('addSportTypeBtn');
+
+    const currentManufacturer = manufacturerSelect.dataset.current;
+    const currentSet = setNameSelect.dataset.current;
+    const currentInsert = insertListSelect.dataset.current;
+    const currentSportType = sportTypeSelect.dataset.current;
+    let currentManufacturerId = null;
+    let currentSetId = null;
+
+    // Load manufacturers on page load
+    async function loadManufacturers() {
+        try {
+            const response = await fetch('/admin/api/manufacturers');
+            const manufacturers = await response.json();
+
+            manufacturerSelect.innerHTML = '<option value="">Select manufacturer...</option>';
+            manufacturers.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m.name;
+                option.dataset.id = m.id;
+                option.textContent = m.name;
+                if (m.name === currentManufacturer) {
+                    option.selected = true;
+                    currentManufacturerId = m.id;
+                }
+                manufacturerSelect.appendChild(option);
+            });
+
+            // If we have a current manufacturer, load its sets
+            if (currentManufacturerId) {
+                await loadSets(currentManufacturerId, currentSet);
+            }
+        } catch (error) {
+            console.error('Error loading manufacturers:', error);
+            manufacturerSelect.innerHTML = '<option value="">Error loading manufacturers</option>';
+        }
+    }
+
+    // Load sets when manufacturer changes
+    async function loadSets(manufacturerId, selectSet = null) {
+        try {
+            setNameSelect.disabled = true;
+            setNameSelect.innerHTML = '<option value="">Loading...</option>';
+
+            const response = await fetch(`/admin/api/manufacturers/${manufacturerId}/sets`);
+            const sets = await response.json();
+
+            setNameSelect.innerHTML = '<option value="">Select set...</option>';
+            sets.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s.set_name;
+                option.dataset.id = s.id;
+                option.textContent = s.set_name + (s.year ? ` (${s.year})` : '');
+                if (selectSet && s.set_name === selectSet) {
+                    option.selected = true;
+                    currentSetId = s.id;
+                }
+                setNameSelect.appendChild(option);
+            });
+
+            setNameSelect.disabled = false;
+            addSetBtn.disabled = false;
+
+            // If we have a current set, load its inserts
+            if (currentSetId) {
+                await loadInserts(currentSetId, currentInsert);
+            }
+        } catch (error) {
+            console.error('Error loading sets:', error);
+            setNameSelect.innerHTML = '<option value="">Error loading sets</option>';
+            setNameSelect.disabled = true;
+        }
+    }
+
+    // Load inserts when set changes
+    async function loadInserts(setId, selectInsert = null) {
+        try {
+            insertListSelect.disabled = true;
+            insertListSelect.innerHTML = '<option value="">Loading...</option>';
+
+            const response = await fetch(`/admin/api/sets/${setId}/inserts`);
+            const inserts = await response.json();
+
+            insertListSelect.innerHTML = '<option value="">Base Set (no insert)</option>';
+            inserts.forEach(i => {
+                const option = document.createElement('option');
+                option.value = i.insert_name;
+                option.dataset.id = i.id;
+                option.textContent = i.insert_name;
+                if (selectInsert && i.insert_name === selectInsert) {
+                    option.selected = true;
+                }
+                insertListSelect.appendChild(option);
+            });
+
+            insertListSelect.disabled = false;
+            addInsertBtn.disabled = false;
+        } catch (error) {
+            console.error('Error loading inserts:', error);
+            insertListSelect.innerHTML = '<option value="">Error loading inserts</option>';
+            insertListSelect.disabled = true;
+        }
+    }
+
+    // Load sport types on page load
+    async function loadSportTypes() {
+        try {
+            const response = await fetch('/admin/api/sport-types');
+            const sportTypes = await response.json();
+
+            sportTypeSelect.innerHTML = '<option value="">Select sport/type...</option>';
+            sportTypes.forEach(st => {
+                const option = document.createElement('option');
+                option.value = st.name;
+                option.dataset.id = st.id;
+                option.textContent = st.name;
+                if (st.name === currentSportType) {
+                    option.selected = true;
+                }
+                sportTypeSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading sport types:', error);
+            sportTypeSelect.innerHTML = '<option value="">Error loading sport types</option>';
+        }
+    }
+
+    // Manufacturer change event
+    manufacturerSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        currentManufacturerId = selectedOption.dataset.id;
+
+        if (currentManufacturerId) {
+            loadSets(currentManufacturerId);
+        } else {
+            setNameSelect.innerHTML = '<option value="">Select manufacturer first</option>';
+            setNameSelect.disabled = true;
+            addSetBtn.disabled = true;
+        }
+
+        // Reset inserts
+        insertListSelect.innerHTML = '<option value="">Select set first</option>';
+        insertListSelect.disabled = true;
+        addInsertBtn.disabled = true;
+        currentSetId = null;
+    });
+
+    // Set change event
+    setNameSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        currentSetId = selectedOption.dataset.id;
+
+        if (currentSetId) {
+            loadInserts(currentSetId);
+        } else {
+            insertListSelect.innerHTML = '<option value="">Select set first</option>';
+            insertListSelect.disabled = true;
+            addInsertBtn.disabled = true;
+        }
+    });
+
+    // Add new manufacturer
+    addManufacturerBtn.addEventListener('click', async function() {
+        const name = prompt('Enter manufacturer name:');
+        if (!name || name.trim() === '') return;
+
+        try {
+            const response = await fetch('/admin/api/manufacturers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name.trim() })
+            });
+
+            const manufacturer = await response.json();
+
+            // Add to dropdown
+            const option = document.createElement('option');
+            option.value = manufacturer.name;
+            option.dataset.id = manufacturer.id;
+            option.textContent = manufacturer.name;
+            option.selected = true;
+            manufacturerSelect.appendChild(option);
+
+            // Trigger change to load sets
+            currentManufacturerId = manufacturer.id;
+            loadSets(manufacturer.id);
+        } catch (error) {
+            console.error('Error adding manufacturer:', error);
+            alert('Failed to add manufacturer');
+        }
+    });
+
+    // Add new set
+    addSetBtn.addEventListener('click', async function() {
+        if (!currentManufacturerId) {
+            alert('Please select a manufacturer first');
+            return;
+        }
+
+        const name = prompt('Enter set name:');
+        if (!name || name.trim() === '') return;
+
+        const year = prompt('Enter year (optional):');
+
+        try {
+            const response = await fetch('/admin/api/sets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    manufacturer_id: currentManufacturerId,
+                    set_name: name.trim(),
+                    year: year ? parseInt(year) : null
+                })
+            });
+
+            const set = await response.json();
+
+            // Add to dropdown
+            const option = document.createElement('option');
+            option.value = set.set_name;
+            option.dataset.id = set.id;
+            option.textContent = set.set_name + (set.year ? ` (${set.year})` : '');
+            option.selected = true;
+            setNameSelect.appendChild(option);
+
+            // Trigger change to load inserts
+            currentSetId = set.id;
+            loadInserts(set.id);
+        } catch (error) {
+            console.error('Error adding set:', error);
+            alert('Failed to add set');
+        }
+    });
+
+    // Add new insert
+    addInsertBtn.addEventListener('click', async function() {
+        if (!currentSetId) {
+            alert('Please select a set first');
+            return;
+        }
+
+        const name = prompt('Enter insert/subset name (e.g., Master, Double Trouble):');
+        if (!name || name.trim() === '') return;
+
+        const description = prompt('Enter description (optional):');
+
+        try {
+            const response = await fetch('/admin/api/inserts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    card_set_id: currentSetId,
+                    insert_name: name.trim(),
+                    description: description || null
+                })
+            });
+
+            const insert = await response.json();
+
+            // Add to dropdown
+            const option = document.createElement('option');
+            option.value = insert.insert_name;
+            option.dataset.id = insert.id;
+            option.textContent = insert.insert_name;
+            option.selected = true;
+            insertListSelect.appendChild(option);
+        } catch (error) {
+            console.error('Error adding insert:', error);
+            alert('Failed to add insert');
+        }
+    });
+
+    // Add new sport type
+    addSportTypeBtn.addEventListener('click', async function() {
+        const name = prompt('Enter sport/type name:');
+        if (!name || name.trim() === '') return;
+
+        try {
+            const response = await fetch('/admin/api/sport-types', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name.trim() })
+            });
+
+            const sportType = await response.json();
+
+            // Add to dropdown
+            const option = document.createElement('option');
+            option.value = sportType.name;
+            option.dataset.id = sportType.id;
+            option.textContent = sportType.name;
+            option.selected = true;
+            sportTypeSelect.appendChild(option);
+        } catch (error) {
+            console.error('Error adding sport type:', error);
+            alert('Failed to add sport type');
+        }
+    });
+
+    // Initialize
+    loadManufacturers();
+    loadSportTypes();
+});
+
 // Preview selected images
 document.getElementById('images')?.addEventListener('change', function(e) {
     const files = e.target.files;

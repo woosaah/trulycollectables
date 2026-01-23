@@ -34,9 +34,9 @@
             <!-- Main Image -->
             <div class="mb-3 position-relative">
                 <img src="<%= allImages[0].url %>"
-                     class="img-fluid product-image-main w-100 cursor-pointer"
+                     class="img-fluid product-image-main w-100 cursor-pointer card-detail-lightbox-trigger"
                      alt="<%= card.card_name %>"
-                     onclick="openLightbox(0)"
+                     data-index="0"
                      style="cursor: pointer; border: 2px solid #ddd; border-radius: 8px;">
                 <div class="position-absolute top-0 end-0 m-2">
                     <span class="badge bg-dark">
@@ -52,9 +52,9 @@
                 <div class="col-3">
                     <div class="position-relative">
                         <img src="<%= img.url %>"
-                             class="img-thumbnail w-100 cursor-pointer"
+                             class="img-thumbnail w-100 cursor-pointer card-detail-lightbox-trigger"
                              alt="<%= img.label %>"
-                             onclick="openLightbox(<%= index %>)"
+                             data-index="<%= index %>"
                              style="cursor: pointer; height: 80px; object-fit: cover;">
                         <small class="text-center d-block text-muted" style="font-size: 0.7rem;">
                             <%= img.label %>
@@ -208,13 +208,13 @@
                 <% if (allImages && allImages.length > 1) { %>
                 <!-- Previous Button -->
                 <button class="btn btn-light position-absolute top-50 start-0 translate-middle-y ms-3"
-                        onclick="changeLightboxImage(-1)" style="opacity: 0.8;">
+                        id="lightboxPrevBtn" style="opacity: 0.8;">
                     <i class="bi bi-chevron-left"></i>
                 </button>
 
                 <!-- Next Button -->
                 <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y me-3"
-                        onclick="changeLightboxImage(1)" style="opacity: 0.8;">
+                        id="lightboxNextBtn" style="opacity: 0.8;">
                     <i class="bi bi-chevron-right"></i>
                 </button>
 
@@ -229,54 +229,82 @@
 </div>
 
 <script>
-// Lightbox functionality
-const images = <%- JSON.stringify(allImages || []) %>;
-let currentImageIndex = 0;
+document.addEventListener('DOMContentLoaded', function() {
+    // Lightbox functionality
+    const images = <%- JSON.stringify(allImages || []) %>;
+    let currentImageIndex = 0;
 
-function openLightbox(index) {
-    currentImageIndex = index;
-    updateLightboxImage();
-    const modal = new bootstrap.Modal(document.getElementById('lightboxModal'));
-    modal.show();
-}
-
-function changeLightboxImage(direction) {
-    currentImageIndex += direction;
-
-    // Loop around
-    if (currentImageIndex < 0) {
-        currentImageIndex = images.length - 1;
-    } else if (currentImageIndex >= images.length) {
-        currentImageIndex = 0;
+    function openLightbox(index) {
+        currentImageIndex = index;
+        updateLightboxImage();
+        const modal = new bootstrap.Modal(document.getElementById('lightboxModal'));
+        modal.show();
     }
 
-    updateLightboxImage();
-}
+    function changeLightboxImage(direction) {
+        currentImageIndex += direction;
 
-function updateLightboxImage() {
-    if (images.length > 0) {
-        document.getElementById('lightboxImage').src = images[currentImageIndex].url;
-        document.getElementById('lightboxLabel').textContent = images[currentImageIndex].label + ' View';
+        // Loop around
+        if (currentImageIndex < 0) {
+            currentImageIndex = images.length - 1;
+        } else if (currentImageIndex >= images.length) {
+            currentImageIndex = 0;
+        }
 
-        const counter = document.getElementById('imageCounter');
-        if (counter) {
-            counter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+        updateLightboxImage();
+    }
+
+    function updateLightboxImage() {
+        if (images.length > 0) {
+            document.getElementById('lightboxImage').src = images[currentImageIndex].url;
+            document.getElementById('lightboxLabel').textContent = images[currentImageIndex].label + ' View';
+
+            const counter = document.getElementById('imageCounter');
+            if (counter) {
+                counter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+            }
         }
     }
-}
 
-// Keyboard navigation
-document.addEventListener('keydown', function(e) {
-    const modal = document.getElementById('lightboxModal');
-    if (modal.classList.contains('show')) {
-        if (e.key === 'ArrowLeft') {
+    // Add click event listeners to all card detail images
+    document.querySelectorAll('.card-detail-lightbox-trigger').forEach(function(img) {
+        img.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const index = parseInt(this.getAttribute('data-index'));
+            openLightbox(index);
+        });
+    });
+
+    // Navigation button event listeners
+    const prevBtn = document.getElementById('lightboxPrevBtn');
+    const nextBtn = document.getElementById('lightboxNextBtn');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
             changeLightboxImage(-1);
-        } else if (e.key === 'ArrowRight') {
-            changeLightboxImage(1);
-        } else if (e.key === 'Escape') {
-            bootstrap.Modal.getInstance(modal).hide();
-        }
+        });
     }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            changeLightboxImage(1);
+        });
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        const modal = document.getElementById('lightboxModal');
+        if (modal && modal.classList.contains('show')) {
+            if (e.key === 'ArrowLeft') {
+                changeLightboxImage(-1);
+            } else if (e.key === 'ArrowRight') {
+                changeLightboxImage(1);
+            } else if (e.key === 'Escape') {
+                bootstrap.Modal.getInstance(modal).hide();
+            }
+        }
+    });
 });
 </script>
 

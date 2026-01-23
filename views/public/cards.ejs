@@ -13,6 +13,16 @@
                         <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Card name, set, number...">
                     </div>
 
+                    <!-- Category -->
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="card_category">
+                            <option value="">All Categories</option>
+                            <option value="sport" <%= filters.card_category === 'sport' ? 'selected' : '' %>>Sport</option>
+                            <option value="non_sport" <%= filters.card_category === 'non_sport' ? 'selected' : '' %>>Non-Sport</option>
+                        </select>
+                    </div>
+
                     <!-- Sport Type -->
                     <div class="mb-3">
                         <label class="form-label">Type</label>
@@ -94,14 +104,26 @@
             <div class="product-grid">
                 <% cards.forEach(card => { %>
                 <div class="card">
-                    <a href="/cards/<%= card.id %>" class="text-decoration-none">
-                        <% if (card.image_front) { %>
-                        <img src="<%= card.image_front %>" class="card-img-top" alt="<%= card.card_name %>">
-                        <% } else { %>
-                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light">
-                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                    <% if (card.image_front) { %>
+                    <div class="position-relative">
+                        <img src="<%= card.image_front %>"
+                             class="card-img-top card-lightbox-trigger"
+                             alt="<%= card.card_name %>"
+                             data-image="<%= card.image_front %>"
+                             data-title="<%= card.card_name.replace(/"/g, '&quot;') %>"
+                             style="cursor: pointer;">
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-dark bg-opacity-75" style="font-size: 0.7rem;">
+                                <i class="bi bi-zoom-in"></i>
+                            </span>
                         </div>
-                        <% } %>
+                    </div>
+                    <% } else { %>
+                    <div class="card-img-top d-flex align-items-center justify-content-center bg-light">
+                        <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                    </div>
+                    <% } %>
+                    <a href="/cards/<%= card.id %>" class="text-decoration-none">
                         <div class="card-body">
                             <h5 class="card-title text-dark"><%= card.card_name %></h5>
                             <p class="card-text text-muted small mb-2">
@@ -151,5 +173,46 @@
         </div>
     </div>
 </div>
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="lightboxLabel">Card Image</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <img id="lightboxImage" src="" class="img-fluid w-100" alt="Card image">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click event listeners to all card images
+    document.querySelectorAll('.card-lightbox-trigger').forEach(function(img) {
+        img.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const imageUrl = this.getAttribute('data-image');
+            const cardName = this.getAttribute('data-title');
+            document.getElementById('lightboxImage').src = imageUrl;
+            document.getElementById('lightboxLabel').textContent = cardName;
+            const modal = new bootstrap.Modal(document.getElementById('lightboxModal'));
+            modal.show();
+        });
+    });
+
+    // Keyboard navigation for lightbox
+    document.addEventListener('keydown', function(e) {
+        const modal = document.getElementById('lightboxModal');
+        if (modal && modal.classList.contains('show') && e.key === 'Escape') {
+            bootstrap.Modal.getInstance(modal).hide();
+        }
+    });
+});
+</script>
 
 <%- include('../partials/footer') %>

@@ -4,21 +4,21 @@ const Collection = {
     // Add card to user collection
     async add(userId, cardData) {
         const {
-            card_name, set_name, card_number, year, sport_type,
+            card_name, set_name, card_number, manufacturer, insert_list, year, sport_type,
             quantity, status, notes
         } = cardData;
 
         const query = `
             INSERT INTO user_collections (
-                user_id, card_name, set_name, card_number, year, sport_type,
+                user_id, card_name, set_name, card_number, manufacturer, insert_list, year, sport_type,
                 quantity, status, notes
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *
         `;
 
         const result = await pool.query(query, [
-            userId, card_name, set_name, card_number, year, sport_type,
+            userId, card_name, set_name, card_number, manufacturer, insert_list, year, sport_type,
             quantity, status, notes
         ]);
 
@@ -104,6 +104,8 @@ const Collection = {
                 uc.card_name,
                 uc.set_name,
                 uc.card_number,
+                uc.manufacturer,
+                uc.insert_list,
                 c.id as card_id,
                 c.price_nzd,
                 c.condition,
@@ -114,6 +116,8 @@ const Collection = {
                 LOWER(uc.card_name) = LOWER(c.card_name)
                 AND (uc.set_name IS NULL OR LOWER(uc.set_name) = LOWER(c.set_name))
                 AND (uc.card_number IS NULL OR uc.card_number = c.card_number)
+                AND (uc.manufacturer IS NULL OR LOWER(uc.manufacturer) = LOWER(c.manufacturer))
+                AND (uc.insert_list IS NULL OR LOWER(uc.insert_list) = LOWER(c.insert_list))
             WHERE uc.user_id = $1
                 AND uc.status = 'want'
                 AND c.available = true
@@ -121,6 +125,56 @@ const Collection = {
         `;
 
         const result = await pool.query(query, [userId]);
+        return result.rows;
+    },
+
+    // Get all wanted cards across all users (for admin)
+    async getAllWanted() {
+        const query = `
+            SELECT
+                uc.id,
+                uc.card_name,
+                uc.set_name,
+                uc.card_number,
+                uc.manufacturer,
+                uc.insert_list,
+                uc.year,
+                uc.sport_type,
+                uc.notes,
+                uc.created_at,
+                u.username,
+                u.email,
+                COUNT(*) OVER (PARTITION BY uc.card_name, uc.set_name, uc.manufacturer) as want_count
+            FROM user_collections uc
+            INNER JOIN users u ON uc.user_id = u.id
+            WHERE uc.status = 'want'
+            ORDER BY want_count DESC, uc.created_at DESC
+        `;
+
+        const result = await pool.query(query);
+        return result.rows;
+    },
+
+    // Get most wanted cards summary (for admin dashboard)
+    async getMostWanted(limit = 20) {
+        const query = `
+            SELECT
+                card_name,
+                set_name,
+                manufacturer,
+                insert_list,
+                sport_type,
+                COUNT(*) as user_count,
+                STRING_AGG(DISTINCT u.username, ', ' ORDER BY u.username) as users_wanting
+            FROM user_collections uc
+            INNER JOIN users u ON uc.user_id = u.id
+            WHERE uc.status = 'want'
+            GROUP BY card_name, set_name, manufacturer, insert_list, sport_type
+            ORDER BY user_count DESC, card_name
+            LIMIT $1
+        `;
+
+        const result = await pool.query(query, [limit]);
         return result.rows;
     }
 };

@@ -1,0 +1,86 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="mb-4">Add Accessory</h2>
+
+            <% if (errors && errors.length > 0) { %>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    <% errors.forEach(error => { %>
+                    <li><%= error.msg %></li>
+                    <% }); %>
+                </ul>
+            </div>
+            <% } %>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="/admin/accessories/add" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="product_name" class="form-label">Product Name *</label>
+                            <input type="text" class="form-control" id="product_name" name="product_name" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">Select Category...</option>
+                                    <option value="Pages">Pages</option>
+                                    <option value="Albums">Albums</option>
+                                    <option value="Sleeves">Sleeves</option>
+                                    <option value="Protectors">Protectors</option>
+                                    <option value="Boxes">Boxes</option>
+                                    <option value="Binders">Binders</option>
+                                    <option value="Display Cases">Display Cases</option>
+                                    <option value="Storage">Storage</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="manufacturer" class="form-label">Manufacturer</label>
+                                <input type="text" class="form-control" id="manufacturer" name="manufacturer">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="price_nzd" class="form-label">Price (NZD) *</label>
+                                <input type="number" class="form-control" id="price_nzd" name="price_nzd"
+                                       step="0.01" min="0" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="quantity" class="form-label">Quantity *</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity"
+                                       min="0" value="1" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Image</label>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Add Accessory
+                            </button>
+                            <a href="/admin/accessories" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

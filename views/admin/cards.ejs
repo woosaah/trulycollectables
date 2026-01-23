@@ -18,10 +18,17 @@
     <div class="card mb-4">
         <div class="card-body">
             <form action="/admin/cards" method="GET" class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Search cards...">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <select class="form-select" name="card_category">
+                        <option value="">All Categories</option>
+                        <option value="sport" <%= filters.card_category === 'sport' ? 'selected' : '' %>>Sport</option>
+                        <option value="non_sport" <%= filters.card_category === 'non_sport' ? 'selected' : '' %>>Non-Sport</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <select class="form-select" name="sport_type">
                         <option value="">All Types</option>
                         <% sportTypes.forEach(sport => { %>
@@ -43,6 +50,7 @@
                 <tr>
                     <th>Card</th>
                     <th>Set</th>
+                    <th>Category</th>
                     <th>Type</th>
                     <th>Condition</th>
                     <th>Price</th>
@@ -56,6 +64,15 @@
                 <tr>
                     <td><strong><%= card.card_name %></strong></td>
                     <td><%= card.set_name || '-' %></td>
+                    <td>
+                        <% if (card.card_category === 'sport') { %>
+                        <span class="badge bg-primary">Sport</span>
+                        <% } else if (card.card_category === 'non_sport') { %>
+                        <span class="badge bg-info">Non-Sport</span>
+                        <% } else { %>
+                        -
+                        <% } %>
+                    </td>
                     <td><%= card.sport_type || '-' %></td>
                     <td>
                         <% if (card.condition) { %>

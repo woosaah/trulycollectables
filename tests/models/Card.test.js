@@ -27,6 +27,8 @@ describe('Card Model', () => {
         card_name: 'Michael Jordan Rookie',
         set_name: '1986 Fleer',
         card_number: '57',
+        manufacturer: 'Fleer',
+        insert_list: 'Rookie',
         year: 1986,
         sport_type: 'basketball',
         condition: 'mint',
