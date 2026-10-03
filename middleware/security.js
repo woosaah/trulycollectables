@@ -2,6 +2,29 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const ActivityLog = require('../models/ActivityLog');
 
+const BLOCKED_EMAIL_DOMAINS = [
+    'immenseignite.info',
+    'mailinator.com',
+    'guerrillamail.com',
+    'tempmail.com',
+    'throwam.com',
+    'sharklasers.com',
+    'guerrillamailblock.com',
+    'grr.la',
+    'guerrillamail.info',
+    'spam4.me',
+    'trashmail.com',
+    'yopmail.com',
+    'dispostable.com',
+    'fakeinbox.com',
+    'maildrop.cc',
+];
+
+const isBlockedEmailDomain = (email) => {
+    const domain = email.split('@')[1]?.toLowerCase();
+    return domain ? BLOCKED_EMAIL_DOMAINS.includes(domain) : false;
+};
+
 // Rate limiting configurations
 const createAccountLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
@@ -76,6 +99,7 @@ const helmetConfig = helmet({
             connectSrc: ["'self'"],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"],
+            scriptSrcAttr: ["'unsafe-inline'"],
             upgradeInsecureRequests: null
         }
     },
@@ -101,8 +125,9 @@ const csrfProtection = (req, res, next) => {
             // Allow for now, but log
             console.warn('CSRF token mismatch');
         }
-        // Still provide the function for error handling
         req.csrfToken = () => req.session.csrfToken || '';
+        // Make token available to views rendered from POST handlers
+        res.locals.csrfToken = req.session.csrfToken || '';
     }
     next();
 };
@@ -114,5 +139,6 @@ module.exports = {
     passwordResetLimiter,
     logActivity,
     helmetConfig,
-    csrfProtection
+    csrfProtection,
+    isBlockedEmailDomain
 };

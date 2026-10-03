@@ -1,0 +1,98 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="mb-4">Add Player</h2>
+
+            <% if (errors && errors.length > 0) { %>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    <% errors.forEach(error => { %>
+                    <li><%= error.msg %></li>
+                    <% }); %>
+                </ul>
+            </div>
+            <% } %>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="/admin/players/add" method="POST">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Player Name *</label>
+                            <input type="text" class="form-control" id="name" name="name"
+                                   value="<%= formData.name || '' %>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="born_in_nz" name="born_in_nz"
+                                       <%= formData.born_in_nz === 'on' ? 'checked' : '' %>>
+                                <label class="form-check-label" for="born_in_nz">
+                                    Born in New Zealand
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="is_female" name="is_female"
+                                       <%= formData.is_female === 'on' ? 'checked' : '' %>>
+                                <label class="form-check-label" for="is_female">
+                                    Women
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Sports Played</label>
+                            <div class="row">
+                                <% sportsList.forEach(sport => { %>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="sports_played"
+                                               value="<%= sport %>" id="sport_<%= sport.replace(/\s/g, '_') %>"
+                                               <%= (formData.sports_played && (Array.isArray(formData.sports_played) ? formData.sports_played.includes(sport) : formData.sports_played === sport)) ? 'checked' : '' %>>
+                                        <label class="form-check-label" for="sport_<%= sport.replace(/\s/g, '_') %>"><%= sport %></label>
+                                    </div>
+                                </div>
+                                <% }); %>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Representative Teams</label>
+                            <div class="row">
+                                <% repTeams.forEach(team => { %>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="<%= team.key %>"
+                                               id="<%= team.key %>"
+                                               <%= formData[team.key] === 'on' ? 'checked' : '' %>>
+                                        <label class="form-check-label" for="<%= team.key %>"><%= team.label %></label>
+                                    </div>
+                                </div>
+                                <% }); %>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="other_teams" class="form-label">Other Teams (if applicable)</label>
+                            <input type="text" class="form-control" id="other_teams" name="other_teams"
+                                   value="<%= formData.other_teams || '' %>" placeholder="e.g. NZ Warriors, Canterbury Crusaders">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="bio" class="form-label">Bio</label>
+                            <textarea class="form-control" id="bio" name="bio" rows="3"><%= formData.bio || '' %></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Add Player</button>
+                            <a href="/admin/players" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

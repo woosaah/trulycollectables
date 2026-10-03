@@ -1,0 +1,186 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a href="/admin/pending-cards" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Queue
+        </a>
+        <h2 class="mb-0">Edit Pending Card</h2>
+    </div>
+
+    <% if (success === 'saved') { %>
+    <div class="alert alert-success alert-dismissible fade show">Changes saved. <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <% } %>
+    <% if (error === 'save_failed') { %>
+    <div class="alert alert-danger alert-dismissible fade show">Save failed — please try again. <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <% } %>
+    <% if (error === 'promote_failed') { %>
+    <div class="alert alert-danger alert-dismissible fade show">Promote failed — please try again. <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <% } %>
+
+    <div class="row g-4">
+
+        <!-- Edit form -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Card Details</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/admin/pending-cards/<%= card.id %>/edit" method="POST">
+
+                        <div class="mb-3">
+                            <label class="form-label">Card Name *</label>
+                            <input type="text" class="form-control" name="card_name" value="<%= card.card_name %>" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Set Name</label>
+                                <input type="text" class="form-control" name="set_name" value="<%= card.set_name || '' %>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Card Number</label>
+                                <input type="text" class="form-control" name="card_number" value="<%= card.card_number || '' %>">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Manufacturer</label>
+                                <input type="text" class="form-control" name="manufacturer" value="<%= card.manufacturer || '' %>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Year</label>
+                                <input type="number" class="form-control" name="year" value="<%= card.year || '' %>" min="1900" max="2099">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Category *</label>
+                                <select class="form-select" name="card_category" required>
+                                    <option value="sport" <%= card.card_category === 'sport' ? 'selected' : '' %>>Sport</option>
+                                    <option value="non_sport" <%= card.card_category !== 'sport' ? 'selected' : '' %>>Non-Sport</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sport / Type</label>
+                                <select class="form-select" name="sport_type">
+                                    <option value="">Select…</option>
+                                    <option value="Basketball" <%= card.sport_type === 'Basketball' ? 'selected' : '' %>>Basketball</option>
+                                    <option value="Pokemon" <%= card.sport_type === 'Pokemon' ? 'selected' : '' %>>Pokemon</option>
+                                    <option value="Magic: The Gathering" <%= card.sport_type === 'Magic: The Gathering' ? 'selected' : '' %>>Magic: The Gathering</option>
+                                    <option value="Baseball" <%= card.sport_type === 'Baseball' ? 'selected' : '' %>>Baseball</option>
+                                    <option value="Football" <%= card.sport_type === 'Football' ? 'selected' : '' %>>Football</option>
+                                    <option value="Cricket" <%= card.sport_type === 'Cricket' ? 'selected' : '' %>>Cricket</option>
+                                    <option value="Rugby" <%= card.sport_type === 'Rugby' ? 'selected' : '' %>>Rugby</option>
+                                    <option value="Rugby League" <%= card.sport_type === 'Rugby League' ? 'selected' : '' %>>Rugby League</option>
+                                    <option value="Other" <%= card.sport_type === 'Other' ? 'selected' : '' %>>Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Insert / Subset</label>
+                            <input type="text" class="form-control" name="insert_list" value="<%= card.insert_list || '' %>">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" name="notes" rows="2"><%= card.notes || '' %></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-floppy"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: image + stats + promote -->
+        <div class="col-lg-5">
+
+            <!-- Photo -->
+            <div class="card mb-4">
+                <div class="card-header"><h6 class="mb-0">Submitted Photo</h6></div>
+                <div class="card-body text-center">
+                    <% if (card.image_front) { %>
+                    <img src="<%= card.image_front %>" class="img-fluid rounded" style="max-height:250px; object-fit:contain">
+                    <% } else { %>
+                    <p class="text-muted mb-0">No photo submitted.</p>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="card mb-4">
+                <div class="card-header"><h6 class="mb-0">Submission Info</h6></div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-6">Submitted by</dt>
+                        <dd class="col-6"><%= card.submitted_by_username || 'Unknown' %></dd>
+                        <dt class="col-6">Collectors</dt>
+                        <dd class="col-6">
+                            <span class="badge bg-primary fs-6"><%= card.collection_count %></span>
+                            <small class="text-muted">user<%= card.collection_count != 1 ? 's' : '' %> tracking this</small>
+                        </dd>
+                        <dt class="col-6">Submitted</dt>
+                        <dd class="col-6"><%= new Date(card.created_at).toLocaleDateString('en-NZ') %></dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Promote to catalogue -->
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-arrow-up-circle"></i> Promote to Catalogue</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        This will add the card to the main catalogue and link all
+                        <strong><%= card.collection_count %></strong> collector<%= card.collection_count != 1 ? 's' : '' %> to it automatically.
+                        You'll be taken to the card's edit page to set pricing and other details.
+                    </p>
+                    <form action="/admin/pending-cards/<%= card.id %>/promote" method="POST">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small">Price (NZD)</label>
+                                <input type="number" class="form-control form-control-sm" name="price_nzd" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small">Qty in Stock</label>
+                                <input type="number" class="form-control form-control-sm" name="quantity" value="1" min="0">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small">Condition</label>
+                                <select class="form-select form-select-sm" name="condition">
+                                    <option value="">Not set</option>
+                                    <option value="mint">Mint</option>
+                                    <option value="near_mint">Near Mint</option>
+                                    <option value="excellent">Excellent</option>
+                                    <option value="good">Good</option>
+                                    <option value="played">Played</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-arrow-up-circle"></i> Promote to Catalogue
+                        </button>
+                    </form>
+                    <hr>
+                    <form action="/admin/pending-cards/<%= card.id %>/delete" method="POST"
+                          onsubmit="return confirm('Delete this submission? This will remove it from all user collections too.')">
+                        <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
+                            <i class="bi bi-trash"></i> Discard Submission
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

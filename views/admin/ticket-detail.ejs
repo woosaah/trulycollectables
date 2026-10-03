@@ -1,0 +1,133 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="/admin/tickets" class="text-muted text-decoration-none small">
+                <i class="bi bi-arrow-left"></i> Tickets
+            </a>
+            <h2 class="mb-0 mt-1">Ticket #<%= ticket.id %></h2>
+        </div>
+        <% if (ticket.status === 'open') { %>
+            <span class="badge bg-danger fs-6">Open</span>
+        <% } else if (ticket.status === 'in_progress') { %>
+            <span class="badge bg-warning text-dark fs-6">In Progress</span>
+        <% } else { %>
+            <span class="badge bg-success fs-6">Resolved</span>
+        <% } %>
+    </div>
+
+    <% if (success) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <% if (success === 'status_updated') { %>Status updated.<% } else if (success === 'notes_saved') { %>Notes saved.<% } %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+
+    <div class="row g-4">
+        <!-- Main content -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><%= ticket.title %></h5>
+                    <p class="text-muted small mb-3">
+                        Filed by <strong><%= ticket.created_by_username || 'Unknown' %></strong>
+                        on <%= new Date(ticket.created_at).toLocaleString('en-NZ') %>
+                        <% if (ticket.page_url) { %>
+                        &middot; <a href="<%= ticket.page_url %>" class="text-muted" target="_blank"><%= ticket.page_title || ticket.page_url %></a>
+                        <% } %>
+                    </p>
+                    <p class="mb-0" style="white-space:pre-wrap;"><%= ticket.description %></p>
+                </div>
+            </div>
+
+            <% if (ticket.screenshot_path) { %>
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-image"></i> Screenshot</span>
+                    <a href="/uploads/<%= ticket.screenshot_path %>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-box-arrow-up-right"></i> Full size
+                    </a>
+                </div>
+                <div class="card-body p-2">
+                    <img src="/uploads/<%= ticket.screenshot_path %>" class="img-fluid rounded" alt="Screenshot">
+                </div>
+            </div>
+            <% } %>
+
+            <!-- Admin notes -->
+            <div class="card">
+                <div class="card-header">Admin Notes</div>
+                <div class="card-body">
+                    <form action="/admin/tickets/<%= ticket.id %>/notes" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <textarea class="form-control mb-3" name="notes" rows="5"
+                            placeholder="Paste Claude Code findings, steps taken, fix applied..."
+                        ><%= ticket.notes || '' %></textarea>
+                        <button type="submit" class="btn btn-primary btn-sm">Save Notes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">Update Status</div>
+                <div class="card-body">
+                    <form action="/admin/tickets/<%= ticket.id %>/status" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <div class="mb-3">
+                            <select class="form-select" name="status">
+                                <option value="open" <%= ticket.status === 'open' ? 'selected' : '' %>>Open</option>
+                                <option value="in_progress" <%= ticket.status === 'in_progress' ? 'selected' : '' %>>In Progress</option>
+                                <option value="resolved" <%= ticket.status === 'resolved' ? 'selected' : '' %>>Resolved</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Update</button>
+                    </form>
+                </div>
+            </div>
+
+            <% if (ticket.page_url) { %>
+            <div class="card mt-3">
+                <div class="card-header">Reported On</div>
+                <div class="card-body">
+                    <p class="small mb-1 text-muted">Page</p>
+                    <p class="mb-2"><%= ticket.page_title || '—' %></p>
+                    <a href="<%= ticket.page_url %>" class="btn btn-outline-secondary btn-sm w-100" target="_blank">
+                        <i class="bi bi-box-arrow-up-right"></i> Open Page
+                    </a>
+                </div>
+            </div>
+            <% } %>
+
+            <div class="card mt-3">
+                <div class="card-header">Claude Code Context</div>
+                <div class="card-body">
+                    <p class="small text-muted mb-2">Copy this into your Claude Code session:</p>
+                    <div class="bg-light rounded p-2 small" style="font-family:monospace;white-space:pre-wrap;user-select:all;" id="cc-context">Ticket #<%= ticket.id %>: <%= ticket.title %>
+URL: <%= ticket.page_url || 'unknown' %>
+Description: <%= ticket.description.replace(/\n/g, ' ') %>
+</div>
+                    <button class="btn btn-outline-secondary btn-sm mt-2 w-100" onclick="copyContext()">
+                        <i class="bi bi-clipboard"></i> Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyContext() {
+    const text = document.getElementById('cc-context').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = event.currentTarget;
+        btn.innerHTML = '<i class="bi bi-check"></i> Copied';
+        setTimeout(() => { btn.innerHTML = '<i class="bi bi-clipboard"></i> Copy'; }, 2000);
+    });
+}
+</script>
+
+<%- include('../partials/footer') %>

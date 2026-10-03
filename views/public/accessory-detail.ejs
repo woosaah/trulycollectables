@@ -1,0 +1,201 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="/accessories">Accessories</a></li>
+            <li class="breadcrumb-item active"><%= accessory.product_name %></li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Image Section -->
+        <div class="col-md-5 mb-4">
+            <% if (accessory.image_url) { %>
+            <img src="<%= accessory.image_url %>" class="img-fluid w-100" alt="<%= accessory.product_name %>" style="border-radius: 8px;">
+            <% } else { %>
+            <div class="d-flex align-items-center justify-content-center bg-light" style="height: 350px; border-radius: 8px;">
+                <i class="bi bi-box-seam text-muted" style="font-size: 5rem;"></i>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Details Section -->
+        <div class="col-md-7">
+            <h1 class="mb-2"><%= accessory.product_name %></h1>
+
+            <% if (accessory.category) { %>
+            <span class="badge bg-secondary mb-3"><%= accessory.category %></span>
+            <% } %>
+            <% if (accessory.manufacturer) { %>
+            <span class="badge bg-light text-dark mb-3"><%= accessory.manufacturer %></span>
+            <% } %>
+
+            <% if (accessory.variants && accessory.variants.length > 0) { %>
+                <!-- Variant pricing -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Select Option</h5>
+                        <div class="list-group" id="variantOptions">
+                            <% accessory.variants.forEach(function(v, i) { %>
+                            <%
+                                var unitsPer = v.units_per || 1;
+                                var variantAvail = Math.floor(accessory.quantity / unitsPer);
+                            %>
+                            <label class="list-group-item list-group-item-action d-flex justify-content-between align-items-center <%= i === 0 ? 'active' : '' %> <%= variantAvail === 0 ? 'text-muted' : '' %>" style="cursor: pointer;">
+                                <div>
+                                    <input type="radio" name="variant" value="<%= v.label %>"
+                                           data-price="<%= v.price %>"
+                                           data-society-price="<%= v.society_price %>"
+                                           data-units-per="<%= unitsPer %>"
+                                           data-available="<%= variantAvail %>"
+                                           class="form-check-input me-2 variant-radio"
+                                           <%= i === 0 ? 'checked' : '' %>>
+                                    <strong><%= v.label %></strong>
+                                    <% if (variantAvail === 0) { %>
+                                        <span class="badge bg-warning text-dark ms-1">Out of stock</span>
+                                    <% } else { %>
+                                        <span class="text-muted small ms-1">(<%= variantAvail %> available)</span>
+                                    <% } %>
+                                </div>
+                                <div class="text-end">
+                                    <% if (isSocietyMember && v.society_price && v.society_price < v.price) { %>
+                                        <span class="text-decoration-line-through text-muted me-2">$<%= v.price.toFixed(2) %></span>
+                                        <span class="fw-bold text-success">$<%= v.society_price.toFixed(2) %></span>
+                                    <% } else { %>
+                                        <span class="fw-bold">$<%= v.price.toFixed(2) %></span>
+                                    <% } %>
+                                </div>
+                            </label>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected price display -->
+                <div class="mb-3" id="priceDisplay">
+                    <% var firstVariant = accessory.variants[0]; %>
+                    <% if (isSocietyMember && firstVariant.society_price && firstVariant.society_price < firstVariant.price) { %>
+                        <span class="text-decoration-line-through text-muted fs-5">$<%= firstVariant.price.toFixed(2) %></span>
+                        <span class="text-success fw-bold fs-3 ms-2">$<%= firstVariant.society_price.toFixed(2) %></span>
+                        <span class="badge bg-success ms-2">Society Member Price</span>
+                    <% } else { %>
+                        <span class="fw-bold fs-3">NZD $<%= firstVariant.price.toFixed(2) %></span>
+                    <% } %>
+                </div>
+            <% } else { %>
+                <!-- Single price product -->
+                <div class="mb-3">
+                    <% if (isSocietyMember && accessory.society_price && accessory.society_price < accessory.price_nzd) { %>
+                        <span class="text-decoration-line-through text-muted fs-5">$<%= parseFloat(accessory.price_nzd).toFixed(2) %></span>
+                        <span class="text-success fw-bold fs-3 ms-2">$<%= parseFloat(accessory.society_price).toFixed(2) %></span>
+                        <span class="badge bg-success ms-2">Society Member Price</span>
+                    <% } else { %>
+                        <span class="fw-bold fs-3">NZD $<%= parseFloat(accessory.price_nzd).toFixed(2) %></span>
+                    <% } %>
+                </div>
+            <% } %>
+
+            <!-- Stock & Add to Cart -->
+            <%
+                let firstVariantStock = 0;
+                if (accessory.variants && accessory.variants.length > 0) {
+                    let firstUnitsPer = accessory.variants[0].units_per || 1;
+                    firstVariantStock = Math.floor(accessory.quantity / firstUnitsPer);
+                } else {
+                    firstVariantStock = accessory.quantity;
+                }
+            %>
+            <div id="stockDisplay" class="mb-3">
+                <% if (firstVariantStock > 0) { %>
+                    <span class="text-success"><i class="bi bi-check-circle"></i> <span id="stockText"><%= firstVariantStock %> in stock</span></span>
+                <% } else { %>
+                    <span class="text-danger"><i class="bi bi-x-circle"></i> <span id="stockText">Out of stock</span></span>
+                <% } %>
+            </div>
+
+            <div id="cartSection">
+                <% if (user) { %>
+                <form action="/user/cart/add" method="POST" class="mb-4" id="addToCartForm">
+                    <input type="hidden" name="accessory_id" value="<%= accessory.id %>">
+                    <input type="hidden" name="variant_label" id="variantLabelInput" value="<%= (accessory.variants && accessory.variants.length > 0) ? accessory.variants[0].label : '' %>">
+                    <div class="row g-2">
+                        <div class="col-3">
+                            <input type="number" class="form-control" name="quantity" value="1" min="1" id="qtyInput"
+                                   max="<%= firstVariantStock %>">
+                        </div>
+                        <div class="col-9">
+                            <button type="submit" class="btn btn-primary w-100 btn-lg" id="addToCartBtn" <%= firstVariantStock === 0 ? 'disabled' : '' %>>
+                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <% } else { %>
+                <a href="/auth/login?redirect=/accessories/<%= accessory.id %>" class="btn btn-outline-primary btn-lg w-100 mb-4">
+                    Login to Purchase
+                </a>
+                <% } %>
+            </div>
+
+            <% if (accessory.description) { %>
+            <div class="mb-4">
+                <h5>Description</h5>
+                <p class="text-muted"><%= accessory.description %></p>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<% if (accessory.variants && accessory.variants.length > 0) { %>
+<script>
+(function() {
+    var radios = document.querySelectorAll('.variant-radio');
+    var labels = document.querySelectorAll('#variantOptions label');
+    var priceDisplay = document.getElementById('priceDisplay');
+    var variantInput = document.getElementById('variantLabelInput');
+    var stockDisplay = document.getElementById('stockDisplay');
+    var addToCartBtn = document.getElementById('addToCartBtn');
+    var qtyInput = document.getElementById('qtyInput');
+    var isMember = <%= isSocietyMember ? 'true' : 'false' %>;
+
+    radios.forEach(function(radio, idx) {
+        radio.addEventListener('change', function() {
+            var price = parseFloat(this.getAttribute('data-price'));
+            var societyPrice = parseFloat(this.getAttribute('data-society-price'));
+            var qty = parseInt(this.getAttribute('data-available')) || 0;
+
+            // Update active state
+            labels.forEach(function(l) { l.classList.remove('active'); });
+            labels[idx].classList.add('active');
+
+            // Update hidden input
+            variantInput.value = this.value;
+
+            // Update price display
+            if (isMember && societyPrice && societyPrice < price) {
+                priceDisplay.innerHTML = '<span class="text-decoration-line-through text-muted fs-5">$' + price.toFixed(2) + '</span>' +
+                    '<span class="text-success fw-bold fs-3 ms-2">$' + societyPrice.toFixed(2) + '</span>' +
+                    '<span class="badge bg-success ms-2">Society Member Price</span>';
+            } else {
+                priceDisplay.innerHTML = '<span class="fw-bold fs-3">NZD $' + price.toFixed(2) + '</span>';
+            }
+
+            // Update stock display
+            if (qty > 0) {
+                stockDisplay.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> <span id="stockText">' + qty + ' in stock</span></span>';
+                if (addToCartBtn) { addToCartBtn.disabled = false; }
+                if (qtyInput) { qtyInput.max = qty; qtyInput.value = 1; }
+            } else {
+                stockDisplay.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle"></i> <span id="stockText">Out of stock</span></span>';
+                if (addToCartBtn) { addToCartBtn.disabled = true; }
+            }
+        });
+    });
+})();
+</script>
+<% } %>
+
+<%- include('../partials/footer') %>

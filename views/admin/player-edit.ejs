@@ -1,0 +1,145 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 class="mb-4">Edit Player: <%= player.name %></h2>
+
+            <% if (success) { %>
+            <div class="alert alert-success alert-dismissible fade show">
+                <%= success === 'updated' ? 'Player updated!' : success === 'linked' ? 'Cards linked!' : success === 'unlinked' ? 'Card unlinked!' : 'Success!' %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <% } %>
+
+            <% if (errors && errors.length > 0) { %>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    <% errors.forEach(error => { %>
+                    <li><%= error.msg %></li>
+                    <% }); %>
+                </ul>
+            </div>
+            <% } %>
+
+            <div class="row">
+                <div class="col-lg-7">
+                    <div class="card mb-4">
+                        <div class="card-header"><h5 class="mb-0">Player Details</h5></div>
+                        <div class="card-body">
+                            <form action="/admin/players/<%= player.id %>/edit" method="POST">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Player Name *</label>
+                                    <input type="text" class="form-control" id="name" name="name"
+                                           value="<%= player.name %>" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="born_in_nz" name="born_in_nz"
+                                               <%= player.born_in_nz ? 'checked' : '' %>>
+                                        <label class="form-check-label" for="born_in_nz">Born in New Zealand</label>
+                                    </div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="is_female" name="is_female"
+                                               <%= player.is_female ? 'checked' : '' %>>
+                                        <label class="form-check-label" for="is_female">Women</label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Sports Played</label>
+                                    <div class="row">
+                                        <% sportsList.forEach(sport => { %>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="sports_played"
+                                                       value="<%= sport %>" id="sport_<%= sport.replace(/\s/g, '_') %>"
+                                                       <%= player.sports_played && player.sports_played.includes(sport) ? 'checked' : '' %>>
+                                                <label class="form-check-label" for="sport_<%= sport.replace(/\s/g, '_') %>"><%= sport %></label>
+                                            </div>
+                                        </div>
+                                        <% }); %>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Representative Teams</label>
+                                    <div class="row">
+                                        <% repTeams.forEach(team => { %>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="<%= team.key %>"
+                                                       id="<%= team.key %>" <%= player[team.key] ? 'checked' : '' %>>
+                                                <label class="form-check-label" for="<%= team.key %>"><%= team.label %></label>
+                                            </div>
+                                        </div>
+                                        <% }); %>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="other_teams" class="form-label">Other Teams</label>
+                                    <input type="text" class="form-control" id="other_teams" name="other_teams"
+                                           value="<%= player.other_teams || '' %>">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="bio" class="form-label">Bio</label>
+                                    <textarea class="form-control" id="bio" name="bio" rows="3"><%= player.bio || '' %></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <!-- Linked Cards -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Linked Cards (<%= cards.length %>)</h5>
+                        </div>
+                        <div class="card-body">
+                            <% if (cards.length > 0) { %>
+                            <div class="list-group list-group-flush">
+                                <% cards.forEach(card => { %>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong><%= card.card_name %></strong>
+                                        <% if (card.set_name) { %><br><small class="text-muted"><%= card.set_name %></small><% } %>
+                                        <% if (card.card_number) { %><small class="text-muted"> #<%= card.card_number %></small><% } %>
+                                    </div>
+                                    <form action="/admin/players/<%= player.id %>/unlink/<%= card.id %>" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Unlink">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                <% }); %>
+                            </div>
+                            <% } else { %>
+                            <p class="text-muted mb-0">No cards linked yet. Use the <a href="/admin/players/match">matching wizard</a> or link cards manually below.</p>
+                            <% } %>
+
+                            <!-- Manual card linking -->
+                            <hr>
+                            <form action="/admin/players/<%= player.id %>/link" method="POST">
+                                <div class="mb-2">
+                                    <label class="form-label small">Link cards by ID (comma-separated)</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-sm" name="card_ids" placeholder="e.g. 123, 456, 789">
+                                        <button type="submit" class="btn btn-sm btn-success">Link</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

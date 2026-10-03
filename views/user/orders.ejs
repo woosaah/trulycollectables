@@ -22,7 +22,7 @@
                     <td><strong><%= order.order_number %></strong></td>
                     <td><%= new Date(order.created_at).toLocaleDateString() %></td>
                     <td>-</td>
-                    <td>NZD $<%= order.total_nzd.toFixed(2) %></td>
+                    <td>NZD $<%= parseFloat(order.total_nzd).toFixed(2) %></td>
                     <td>
                         <span class="badge badge-<%= order.status %>"><%= order.status %></span>
                     </td>
@@ -39,7 +39,7 @@
     <% } else { %>
     <div class="alert alert-info">
         <i class="bi bi-info-circle"></i> You haven't placed any orders yet.
-        <a href="/cards" class="alert-link">Start shopping!</a>
+        <a href="/accessories" class="alert-link">Start shopping!</a>
     </div>
     <% } %>
 </div>

@@ -8,7 +8,7 @@ const User = {
         const query = `
             INSERT INTO users (username, email, password_hash, role)
             VALUES ($1, $2, $3, $4)
-            RETURNING id, username, email, role, created_at
+            RETURNING id, username, email, role, is_society_member, created_at
         `;
         const result = await pool.query(query, [username, email, hashedPassword, role]);
         return result.rows[0];
@@ -30,7 +30,7 @@ const User = {
 
     // Find user by ID
     async findById(id) {
-        const query = 'SELECT id, username, email, role, created_at FROM users WHERE id = $1';
+        const query = 'SELECT id, username, email, role, is_society_member, created_at FROM users WHERE id = $1';
         const result = await pool.query(query, [id]);
         return result.rows[0];
     },
@@ -59,7 +59,7 @@ const User = {
             UPDATE users
             SET ${fields.join(', ')}
             WHERE id = $${paramCount}
-            RETURNING id, username, email, role, created_at
+            RETURNING id, username, email, role, is_society_member, created_at
         `;
         const result = await pool.query(query, values);
         return result.rows[0];
@@ -70,6 +70,34 @@ const User = {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         const query = 'UPDATE users SET password_hash = $1 WHERE id = $2';
         await pool.query(query, [hashedPassword, id]);
+    },
+
+    // Generate API key
+    async generateApiKey(userId) {
+        const crypto = require('crypto');
+        const apiKey = crypto.randomBytes(32).toString('hex');
+        const query = 'UPDATE users SET api_key = $1, api_enabled = true WHERE id = $2 RETURNING api_key';
+        const result = await pool.query(query, [apiKey, userId]);
+        return result.rows[0].api_key;
+    },
+
+    // Revoke API access
+    async revokeApiAccess(userId) {
+        const query = 'UPDATE users SET api_enabled = false, api_key = NULL WHERE id = $2';
+        await pool.query(query, [userId]);
+    },
+
+    // Toggle API access
+    async toggleApiAccess(userId, enabled) {
+        const query = 'UPDATE users SET api_enabled = $1 WHERE id = $2';
+        await pool.query(query, [enabled, userId]);
+    },
+
+    // Get all users (admin only)
+    async findAll() {
+        const query = 'SELECT id, username, email, role, is_society_member, api_enabled, created_at FROM users ORDER BY created_at DESC';
+        const result = await pool.query(query);
+        return result.rows;
     }
 };
 

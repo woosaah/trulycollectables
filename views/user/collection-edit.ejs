@@ -39,12 +39,12 @@
                                 <label for="sport_type" class="form-label">Sport/Type</label>
                                 <select class="form-select" id="sport_type" name="sport_type">
                                     <option value="">Select...</option>
-                                    <option value="basketball" <%= item.sport_type === 'basketball' ? 'selected' : '' %>>Basketball</option>
-                                    <option value="pokemon" <%= item.sport_type === 'pokemon' ? 'selected' : '' %>>Pokemon</option>
-                                    <option value="magic" <%= item.sport_type === 'magic' ? 'selected' : '' %>>Magic: The Gathering</option>
-                                    <option value="baseball" <%= item.sport_type === 'baseball' ? 'selected' : '' %>>Baseball</option>
-                                    <option value="football" <%= item.sport_type === 'football' ? 'selected' : '' %>>Football</option>
-                                    <option value="other" <%= item.sport_type === 'other' ? 'selected' : '' %>>Other</option>
+                                    <% sportTypes.forEach(type => { %>
+                                    <option value="<%= type %>" <%= item.sport_type === type ? 'selected' : '' %>><%= type %></option>
+                                    <% }) %>
+                                    <% if (item.sport_type && !sportTypes.includes(item.sport_type)) { %>
+                                    <option value="<%= item.sport_type %>" selected><%= item.sport_type %></option>
+                                    <% } %>
                                 </select>
                             </div>
                         </div>

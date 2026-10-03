@@ -1,0 +1,102 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Tickets</h2>
+        <a href="/admin" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+    </div>
+
+    <!-- Status counts -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <a href="/admin/tickets?status=open" class="text-decoration-none">
+                <div class="card border-danger">
+                    <div class="card-body text-center py-2">
+                        <h4 class="text-danger mb-0"><%= counts.open %></h4>
+                        <small class="text-muted">Open</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/admin/tickets?status=in_progress" class="text-decoration-none">
+                <div class="card border-warning">
+                    <div class="card-body text-center py-2">
+                        <h4 class="text-warning mb-0"><%= counts.in_progress %></h4>
+                        <small class="text-muted">In Progress</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/admin/tickets?status=resolved" class="text-decoration-none">
+                <div class="card border-success">
+                    <div class="card-body text-center py-2">
+                        <h4 class="text-success mb-0"><%= counts.resolved %></h4>
+                        <small class="text-muted">Resolved</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="mb-3 d-flex gap-2">
+        <a href="/admin/tickets" class="btn btn-sm <%= filterStatus === '' ? 'btn-dark' : 'btn-outline-dark' %>">All</a>
+        <a href="/admin/tickets?status=open" class="btn btn-sm <%= filterStatus === 'open' ? 'btn-danger' : 'btn-outline-danger' %>">Open</a>
+        <a href="/admin/tickets?status=in_progress" class="btn btn-sm <%= filterStatus === 'in_progress' ? 'btn-warning' : 'btn-outline-warning' %>">In Progress</a>
+        <a href="/admin/tickets?status=resolved" class="btn btn-sm <%= filterStatus === 'resolved' ? 'btn-success' : 'btn-outline-success' %>">Resolved</a>
+    </div>
+
+    <% if (tickets.length > 0) { %>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Page</th>
+                    <th>Filed by</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <% tickets.forEach(ticket => { %>
+                <tr>
+                    <td class="text-muted"><%= ticket.id %></td>
+                    <td>
+                        <strong><%= ticket.title %></strong>
+                        <% if (ticket.screenshot_path) { %>
+                        <i class="bi bi-image text-muted ms-1" title="Has screenshot"></i>
+                        <% } %>
+                    </td>
+                    <td class="text-muted small"><%= ticket.page_title || ticket.page_url || '—' %></td>
+                    <td><%= ticket.created_by_username || 'Unknown' %></td>
+                    <td>
+                        <% if (ticket.status === 'open') { %>
+                            <span class="badge bg-danger">Open</span>
+                        <% } else if (ticket.status === 'in_progress') { %>
+                            <span class="badge bg-warning text-dark">In Progress</span>
+                        <% } else { %>
+                            <span class="badge bg-success">Resolved</span>
+                        <% } %>
+                    </td>
+                    <td class="text-muted small"><%= new Date(ticket.created_at).toLocaleDateString('en-NZ') %></td>
+                    <td>
+                        <a href="/admin/tickets/<%= ticket.id %>" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-check-circle"></i> No tickets <%= filterStatus ? 'with status "' + filterStatus + '"' : '' %>. All clear.
+    </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

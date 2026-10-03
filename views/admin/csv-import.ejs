@@ -25,15 +25,28 @@
             </div>
             <% } %>
 
+            <% if (errorMessage) { %>
+            <div class="alert alert-danger"><%= errorMessage %></div>
+            <% } %>
+
             <div class="alert alert-info">
                 <h5 class="alert-heading">How Bulk Import Works</h5>
-                <ol class="mb-0">
+                <ol>
                     <li>Download the CSV template or prepare your own CSV file</li>
-                    <li>Fill in your card data (card_name is required, others optional)</li>
+                    <li>Fill in your card data — <strong>card_name, card_category, price_nzd</strong> are required</li>
                     <li>Upload the CSV file and map columns if needed</li>
                     <li>Preview the data and choose how to handle duplicates</li>
-                    <li>Execute the import - cards will be added to inventory!</li>
+                    <li>Execute the import — cards will be added to inventory!</li>
                 </ol>
+                <hr>
+                <h6>Auto-creation</h6>
+                <ul class="mb-0">
+                    <li><strong>Manufacturers</strong> — new manufacturers are automatically created if they don't exist</li>
+                    <li><strong>Sets</strong> — new sets are automatically created under the manufacturer</li>
+                    <li><strong>Sport/Types</strong> — new sport types (e.g. Rugby, Cricket) are automatically added</li>
+                    <li><strong>Inserts</strong> — new insert/subset names are automatically created under the set</li>
+                    <li><strong>Duplicates</strong> — matched on card_name + set_name + card_number. You choose to skip, update, or merge quantity</li>
+                </ul>
             </div>
 
             <div class="card">
@@ -55,16 +68,30 @@
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Card Name Column</label>
+                                    <label class="form-label">Card Name Column <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="col_card_name"
                                            placeholder="card_name" value="card_name">
-                                    <small class="text-danger">* Required field</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Manufacturer Column</label>
+                                    <input type="text" class="form-control" name="col_manufacturer"
+                                           placeholder="manufacturer" value="manufacturer">
+                                    <small class="text-muted">Auto-created if new</small>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Set Name Column</label>
                                     <input type="text" class="form-control" name="col_set_name"
                                            placeholder="set_name" value="set_name">
+                                    <small class="text-muted">Auto-created if new</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Insert/Subset Column</label>
+                                    <input type="text" class="form-control" name="col_insert_list"
+                                           placeholder="insert_list" value="insert_list">
+                                    <small class="text-muted">e.g., Base Set, Master, Double Trouble. Auto-created if new</small>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
@@ -74,26 +101,13 @@
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Manufacturer Column</label>
-                                    <input type="text" class="form-control" name="col_manufacturer"
-                                           placeholder="manufacturer" value="manufacturer">
-                                </div>
-
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Insert List Column</label>
-                                    <input type="text" class="form-control" name="col_insert_list"
-                                           placeholder="insert_list" value="insert_list">
-                                    <small class="text-muted">e.g., Base Set, Master, Insert, etc.</small>
-                                </div>
-
-                                <div class="col-md-6 mb-3">
                                     <label class="form-label">Year Column</label>
                                     <input type="text" class="form-control" name="col_year"
                                            placeholder="year" value="year">
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Category Column</label>
+                                    <label class="form-label">Category Column <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="col_card_category"
                                            placeholder="card_category" value="card_category">
                                     <small class="text-muted">sport or non_sport</small>
@@ -103,6 +117,7 @@
                                     <label class="form-label">Sport/Type Column</label>
                                     <input type="text" class="form-control" name="col_sport_type"
                                            placeholder="sport_type" value="sport_type">
+                                    <small class="text-muted">e.g., Rugby, Cricket, Pokemon. Auto-created if new</small>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
@@ -113,7 +128,7 @@
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Price (NZD) Column</label>
+                                    <label class="form-label">Price (NZD) Column <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="col_price_nzd"
                                            placeholder="price_nzd" value="price_nzd">
                                 </div>
@@ -122,6 +137,47 @@
                                     <label class="form-label">Quantity Column</label>
                                     <input type="text" class="form-control" name="col_quantity"
                                            placeholder="quantity" value="quantity">
+                                    <small class="text-muted">Defaults to 1 if not provided</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Product Type Column</label>
+                                    <input type="text" class="form-control" name="col_product_type"
+                                           placeholder="product_type" value="product_type">
+                                    <small class="text-muted">single, pack, or box. Defaults to single</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Team Column</label>
+                                    <input type="text" class="form-control" name="col_team"
+                                           placeholder="team" value="team">
+                                    <small class="text-muted">e.g., All Blacks, Warriors, Black Caps</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Variation Column</label>
+                                    <input type="text" class="form-control" name="col_variation"
+                                           placeholder="variation" value="variation">
+                                    <small class="text-muted">Error, Correction, UER, Short Print, Other</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Rookie Card Column</label>
+                                    <input type="text" class="form-control" name="col_is_rookie_card"
+                                           placeholder="is_rookie_card" value="is_rookie_card">
+                                    <small class="text-muted">yes/no or true/false</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Notes Column</label>
+                                    <input type="text" class="form-control" name="col_notes"
+                                           placeholder="notes" value="notes">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Description Column</label>
+                                    <input type="text" class="form-control" name="col_description"
+                                           placeholder="description" value="description">
                                 </div>
 
                                 <div class="col-md-6 mb-3">
@@ -136,12 +192,6 @@
                                     <input type="text" class="form-control" name="col_image_back"
                                            placeholder="image_back" value="image_back">
                                     <small class="text-muted">URL or path to back image</small>
-                                </div>
-
-                                <div class="col-md-12 mb-3">
-                                    <label class="form-label">Description Column</label>
-                                    <input type="text" class="form-control" name="col_description"
-                                           placeholder="description" value="description">
                                 </div>
                             </div>
                         </div>
@@ -161,10 +211,12 @@
                     <h5 class="mb-0">CSV Format Example</h5>
                 </div>
                 <div class="card-body">
-                    <pre class="bg-light p-3 rounded"><code>card_name,set_name,card_number,manufacturer,insert_list,year,card_category,sport_type,condition,price_nzd,quantity,image_front,image_back,description
-Michael Jordan Rookie,1986 Fleer Basketball,57,Fleer,Base Set,1986,sport,Basketball,near_mint,125.00,1,,,Iconic rookie card in excellent condition
-Pikachu,Base Set,58,Wizards of the Coast,Common,1999,non_sport,Pokemon,mint,45.00,3,,,Classic Pokemon card from the original base set
-Lewis Hamilton Podium Power,F1 2023 Season,44,Topps,Master Set,2023,sport,Other,mint,15.00,2,,,F1 racing card featuring Lewis Hamilton</code></pre>
+                    <p class="text-muted mb-2">Fields marked with <span class="text-danger">*</span> are required. New manufacturers, sets, sport types, and inserts are automatically created.</p>
+                    <pre class="bg-light p-3 rounded" style="font-size: 0.75rem; overflow-x: auto;"><code>card_name*,manufacturer,set_name,insert_list,card_number,year,card_category*,sport_type,condition,price_nzd*,quantity,product_type,team,variation,is_rookie_card,notes,description
+Beauden Barrett,Tap N Play,2024 All Blacks,Base Set,10,2024,sport,Rugby,mint,5.00,4,single,All Blacks,,,,"All Blacks first five-eighth"
+"Shaun Johnson Rookie",Select,2012 NRL,Base Set,99,2012,sport,Rugby League,near_mint,25.00,1,single,Warriors,,yes,,Rookie card
+"2024 All Blacks Box",Tap N Play,2024 All Blacks,,,2024,sport,Rugby,mint,89.99,2,box,,,,Sealed box,36 packs per box
+Pikachu,Wizards of the Coast,Base Set,,58,1999,non_sport,Pokemon,mint,45.00,3,single,,,,,"Original base set"</code></pre>
                 </div>
             </div>
         </div>

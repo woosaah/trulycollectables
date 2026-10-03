@@ -1,0 +1,146 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Set Variations — Bulk Add</h2>
+            <p class="text-muted mb-0">Add a parallel (e.g. Pink, Rainbow, Silver) to every card in a set at once</p>
+        </div>
+        <a href="/admin/cards" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Cards
+        </a>
+    </div>
+
+    <% if (success) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle"></i> Created variation for <strong><%= success %></strong> cards.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+
+    <% if (error) { %>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <%= error === 'missing_fields' ? 'Set name and variation name are required.' : 'Something went wrong.' %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+
+    <div class="row">
+        <!-- Step 1: pick a set -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header"><h6 class="mb-0">1. Select Set</h6></div>
+                <div class="card-body">
+                    <form action="/admin/set-variations" method="GET">
+                        <select class="form-select mb-3" name="set_name" required onchange="this.form.submit()">
+                            <option value="">Choose a set...</option>
+                            <% sets.forEach(s => { %>
+                            <option value="<%= s %>" <%= selectedSet === s ? 'selected' : '' %>><%= s %></option>
+                            <% }); %>
+                        </select>
+                        <button type="submit" class="btn btn-primary w-100">Select</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: define the variation -->
+        <div class="col-md-8">
+            <% if (selectedSet) { %>
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">2. Define Variation for <strong><%= selectedSet %></strong></h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong><%= baseCount %></strong> base cards &nbsp;·&nbsp;
+                        <strong><%= insertCount %></strong> insert/subset cards in this set.
+                        Cards that already have this variation name will be skipped.
+                    </div>
+
+                    <form action="/admin/set-variations/bulk-add" method="POST">
+                        <input type="hidden" name="set_name" value="<%= selectedSet %>">
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Variation Name *</label>
+                                <input type="text" class="form-control" name="variation_name"
+                                       placeholder="e.g. Pink Parallel" required>
+                                <small class="text-muted">Must be unique per card</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Default Price (NZD)</label>
+                                <input type="number" class="form-control" name="price_nzd" step="0.01" min="0" value="0.00">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Default Qty</label>
+                                <input type="number" class="form-control" name="quantity" min="0" value="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Condition</label>
+                                <select class="form-select" name="condition">
+                                    <option value="">Any</option>
+                                    <option value="mint">Mint</option>
+                                    <option value="near_mint">Near Mint</option>
+                                    <option value="excellent">Excellent</option>
+                                    <option value="good">Good</option>
+                                    <option value="played">Played</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-2">
+                                <label class="form-label">Sort Order</label>
+                                <input type="number" class="form-control" name="sort_order" min="0" value="0">
+                                <small class="text-muted">Lower = first</small>
+                            </div>
+                            <div class="col-md-10 d-flex align-items-end">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="include_inserts" value="1" id="include_inserts">
+                                    <label class="form-check-label" for="include_inserts">
+                                        Also add to insert/subset cards (<%= insertCount %> cards)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i> Add Variation to Set
+                            </button>
+                            <span class="text-muted ms-3 small">
+                                Will create up to <strong id="preview-count"><%= baseCount %></strong> new variation records
+                            </span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <% } else { %>
+            <div class="card">
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-collection" style="font-size:3rem;"></i>
+                    <p class="mt-3">Select a set on the left to get started</p>
+                </div>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const includeInserts = document.getElementById('include_inserts');
+    const previewCount = document.getElementById('preview-count');
+    if (includeInserts && previewCount) {
+        const base = <%= baseCount %>;
+        const inserts = <%= insertCount %>;
+        includeInserts.addEventListener('change', function() {
+            previewCount.textContent = this.checked ? (base + inserts) : base;
+        });
+    }
+});
+</script>
+
+<%- include('../partials/footer') %>

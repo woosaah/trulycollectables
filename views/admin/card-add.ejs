@@ -117,10 +117,62 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="quantity" class="form-label">Quantity *</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity"
+                                       min="1" value="1" required>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="product_type" class="form-label">Product Type</label>
+                                <select class="form-select" id="product_type" name="product_type">
+                                    <option value="single" selected>Single Card</option>
+                                    <option value="pack">Pack</option>
+                                    <option value="box">Box</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="team" class="form-label">Team</label>
+                                <input type="text" class="form-control" id="team" name="team" placeholder="e.g. All Blacks, Warriors">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="variation" class="form-label">Variation</label>
+                                <select class="form-select" id="variation" name="variation">
+                                    <option value="">None</option>
+                                    <option value="Error">Error</option>
+                                    <option value="Correction">Correction</option>
+                                    <option value="UER">UER</option>
+                                    <option value="Short Print">Short Print</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mb-3 d-flex align-items-end">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="is_rookie_card" name="is_rookie_card">
+                                    <label class="form-check-label" for="is_rookie_card">
+                                        <strong>RC</strong> - Rookie Card
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="player_id" class="form-label">Player</label>
+                                <select class="form-select" id="player_id" name="player_id">
+                                    <option value="">No player linked</option>
+                                </select>
+                                <small class="text-muted">Type to search players</small>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
-                            <label for="quantity" class="form-label">Quantity *</label>
-                            <input type="number" class="form-control" id="quantity" name="quantity"
-                                   min="1" value="1" required>
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Internal notes about this card..."></textarea>
                         </div>
 
                         <div class="mb-3">
@@ -432,9 +484,41 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Load players for linking
+    const playerSelect = document.getElementById('player_id');
+    async function loadPlayers(searchTerm) {
+        try {
+            const url = searchTerm ? `/admin/api/players/search?q=${encodeURIComponent(searchTerm)}` : '/admin/api/players/search?q=';
+            const response = await fetch(url);
+            const players = await response.json();
+            playerSelect.innerHTML = '<option value="">No player linked</option>';
+            players.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = p.name;
+                playerSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading players:', error);
+        }
+    }
+
+    // Debounced player search
+    let playerSearchTimeout;
+    const playerSearchInput = document.createElement('input');
+    playerSearchInput.type = 'text';
+    playerSearchInput.className = 'form-control form-control-sm mt-1';
+    playerSearchInput.placeholder = 'Search players...';
+    playerSelect.parentNode.insertBefore(playerSearchInput, playerSelect.nextSibling.nextSibling);
+    playerSearchInput.addEventListener('input', function() {
+        clearTimeout(playerSearchTimeout);
+        playerSearchTimeout = setTimeout(() => loadPlayers(this.value), 300);
+    });
+
     // Initialize
     loadManufacturers();
     loadSportTypes();
+    loadPlayers('');
 });
 </script>
 

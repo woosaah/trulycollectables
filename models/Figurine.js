@@ -29,7 +29,7 @@ const Figurine = {
     async findAll(approved = true, limit = 20, offset = 0) {
         const query = `
             SELECT * FROM figurines
-            WHERE approved = $1 AND available = true
+            WHERE approved = $1 AND available = true AND quantity > 0
             ORDER BY created_at DESC
             LIMIT $2 OFFSET $3
         `;
@@ -97,6 +97,19 @@ const Figurine = {
     async delete(id) {
         const query = 'DELETE FROM figurines WHERE id = $1';
         await pool.query(query, [id]);
+    },
+
+    async search(term) {
+        const like = `%${term}%`;
+        const result = await pool.query(`
+            SELECT id, product_name, price_nzd, image_url, quantity
+            FROM figurines
+            WHERE approved = true AND available = true
+              AND LOWER(product_name) LIKE LOWER($1)
+            ORDER BY product_name
+            LIMIT 10
+        `, [like]);
+        return result.rows;
     },
 
     // Count figurines

@@ -1,0 +1,108 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 class="mb-4">Player Import Preview</h2>
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-success"><%= preview.validRows %></h3>
+                            <p class="mb-0">Valid Rows</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-danger"><%= preview.errorRows %></h3>
+                            <p class="mb-0">Error Rows</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h3 class="text-primary"><%= preview.totalRows %></h3>
+                            <p class="mb-0">Total Rows</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sample Data -->
+            <div class="card mb-4">
+                <div class="card-header"><h5 class="mb-0">Sample Data (First 10 Rows)</h5></div>
+                <div class="card-body">
+                    <% if (preview.sampleRows && preview.sampleRows.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>NZ</th>
+                                    <th>Sports</th>
+                                    <th>Rep Teams</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% preview.sampleRows.forEach(row => { %>
+                                <tr>
+                                    <td><%= row.name %></td>
+                                    <td><%= row.born_in_nz ? 'Yes' : 'No' %></td>
+                                    <td><%= row.sports_played ? row.sports_played.join(', ') : '-' %></td>
+                                    <td>
+                                        <% if (row.played_for_all_blacks) { %>AB <% } %>
+                                        <% if (row.played_for_maori) { %>Maori <% } %>
+                                        <% if (row.played_for_kiwis) { %>Kiwis <% } %>
+                                        <% if (row.played_for_black_caps) { %>BC <% } %>
+                                        <% if (row.played_for_white_ferns) { %>WF <% } %>
+                                        <% if (row.played_for_tall_blacks) { %>TB <% } %>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Errors -->
+            <% if (preview.errorRows > 0) { %>
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Errors (<%= preview.errorRows %>)</h5>
+                </div>
+                <div class="card-body">
+                    <% preview.errors.forEach(error => { %>
+                    <p class="mb-1"><strong>Row <%= error.row %>:</strong> <%= error.errors.join(', ') %></p>
+                    <% }); %>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- Execute -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Ready to Import</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong><%= preview.validRows %></strong> players will be imported. Existing players (matched by name) will be updated.</p>
+                    <form action="/admin/players/import/execute" method="POST">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Execute Import
+                            </button>
+                            <a href="/admin/players/import" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

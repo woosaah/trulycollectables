@@ -1,0 +1,109 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="mb-4">Edit Figurine</h2>
+
+            <% if (errors && errors.length > 0) { %>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    <% errors.forEach(error => { %>
+                    <li><%= error.msg %></li>
+                    <% }); %>
+                </ul>
+            </div>
+            <% } %>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="/admin/figurines/<%= figurine.id %>/edit" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="product_name" class="form-label">Product Name *</label>
+                            <input type="text" class="form-control" id="product_name" name="product_name"
+                                   value="<%= figurine.product_name %>" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="sku" class="form-label">SKU</label>
+                                <input type="text" class="form-control" id="sku" name="sku"
+                                       value="<%= figurine.sku || '' %>">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="supplier" class="form-label">Supplier</label>
+                                <input type="text" class="form-control" id="supplier" name="supplier"
+                                       value="<%= figurine.supplier || '' %>">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="price_nzd" class="form-label">Price NZD *</label>
+                                <input type="number" class="form-control" id="price_nzd" name="price_nzd"
+                                       step="0.01" min="0" value="<%= figurine.price_nzd %>" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="quantity" class="form-label">Quantity *</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity"
+                                       min="0" value="<%= figurine.quantity %>" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="5"><%= figurine.description || '' %></textarea>
+                        </div>
+
+                        <!-- Shipping Bag Configuration -->
+                        <div class="card mb-3 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="bi bi-bag"></i> Shipping — How many fit per bag?</h6>
+                                <p class="text-muted small mb-3">Leave blank if the product doesn't fit in that bag size.</p>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="small_bag_qty" class="form-label">Small Bag</label>
+                                        <input type="number" class="form-control" id="small_bag_qty" name="small_bag_qty"
+                                               min="1" value="<%= figurine.small_bag_qty || '' %>" placeholder="—">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="medium_bag_qty" class="form-label">Medium Bag</label>
+                                        <input type="number" class="form-control" id="medium_bag_qty" name="medium_bag_qty"
+                                               min="1" value="<%= figurine.medium_bag_qty || '' %>" placeholder="—">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="large_bag_qty" class="form-label">Large Bag</label>
+                                        <input type="number" class="form-control" id="large_bag_qty" name="large_bag_qty"
+                                               min="1" value="<%= figurine.large_bag_qty || '' %>" placeholder="—">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Image</label>
+                            <% if (figurine.image_url) { %>
+                            <div class="mb-2">
+                                <img src="<%= figurine.image_url %>" alt="Current image" style="max-width: 200px;">
+                            </div>
+                            <% } %>
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                            <small class="text-muted">Leave empty to keep current image</small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Update Figurine
+                            </button>
+                            <a href="/admin/figurines" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

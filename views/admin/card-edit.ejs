@@ -9,6 +9,9 @@
             <div class="alert alert-success alert-dismissible fade show">
                 <%= success === 'images_added' ? 'Images added successfully!' :
                     success === 'image_deleted' ? 'Image deleted successfully!' :
+                    success === 'variation_added' ? 'Variation added!' :
+                    success === 'variation_updated' ? 'Variation updated!' :
+                    success === 'variation_deleted' ? 'Variation deleted!' :
                     'Card updated successfully!' %>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -19,6 +22,7 @@
                 <%= error === 'no_images' ? 'Please select at least one image' :
                     error === 'add_failed' ? 'Failed to add images' :
                     error === 'delete_failed' ? 'Failed to delete image' :
+                    error === 'variation_failed' ? 'Failed to save variation' :
                     'An error occurred' %>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -129,10 +133,64 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="quantity" class="form-label">Quantity *</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity"
+                                       min="0" value="<%= card.quantity %>" required>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="product_type" class="form-label">Product Type</label>
+                                <select class="form-select" id="product_type" name="product_type">
+                                    <option value="single" <%= card.product_type === 'single' ? 'selected' : '' %>>Single Card</option>
+                                    <option value="pack" <%= card.product_type === 'pack' ? 'selected' : '' %>>Pack</option>
+                                    <option value="box" <%= card.product_type === 'box' ? 'selected' : '' %>>Box</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="team" class="form-label">Team</label>
+                                <input type="text" class="form-control" id="team" name="team"
+                                       value="<%= card.team || '' %>" placeholder="e.g. All Blacks, Warriors">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="variation" class="form-label">Variation</label>
+                                <select class="form-select" id="variation" name="variation">
+                                    <option value="">None</option>
+                                    <option value="Error" <%= card.variation === 'Error' ? 'selected' : '' %>>Error</option>
+                                    <option value="Correction" <%= card.variation === 'Correction' ? 'selected' : '' %>>Correction</option>
+                                    <option value="UER" <%= card.variation === 'UER' ? 'selected' : '' %>>UER</option>
+                                    <option value="Short Print" <%= card.variation === 'Short Print' ? 'selected' : '' %>>Short Print</option>
+                                    <option value="Other" <%= card.variation === 'Other' ? 'selected' : '' %>>Other</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4 mb-3 d-flex align-items-end">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="is_rookie_card" name="is_rookie_card"
+                                           <%= card.is_rookie_card ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="is_rookie_card">
+                                        <strong>RC</strong> - Rookie Card
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="player_id" class="form-label">Player</label>
+                                <select class="form-select" id="player_id" name="player_id" data-current="<%= card.player_id || '' %>">
+                                    <option value="">No player linked</option>
+                                </select>
+                                <small class="text-muted">Type to search players</small>
+                            </div>
+                        </div>
+
                         <div class="mb-3">
-                            <label for="quantity" class="form-label">Quantity *</label>
-                            <input type="number" class="form-control" id="quantity" name="quantity"
-                                   min="0" value="<%= card.quantity %>" required>
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Internal notes about this card..."><%= card.notes || '' %></textarea>
                         </div>
 
                         <div class="mb-3">
@@ -163,6 +221,44 @@
                             <a href="/admin/cards" class="btn btn-outline-secondary">Cancel</a>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- eBay Sold Price Research -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0"><i class="bi bi-search"></i> eBay Prices</h5>
+                        <small class="text-muted">Active listings on eBay AU — fixed price, lowest first</small>
+                    </div>
+                    <button type="button" class="btn btn-warning btn-sm" id="ebayCheckBtn">
+                        <i class="bi bi-graph-up"></i> Check eBay
+                    </button>
+                </div>
+                <div class="card-body" id="ebayResults" style="display:none;">
+                    <div id="ebayLoading" class="text-center py-3" style="display:none;">
+                        <div class="spinner-border spinner-border-sm text-warning me-2"></div>
+                        <span class="text-muted">Searching eBay...</span>
+                    </div>
+                    <div id="ebayError" class="alert alert-danger" style="display:none;"></div>
+                    <div id="ebayContent" style="display:none;">
+                        <div id="ebayStats" class="row g-3 mb-4"></div>
+                        <p class="text-muted small mb-2">Query: <code id="ebayQuery"></code></p>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:60px;">Image</th>
+                                        <th>Title</th>
+                                        <th>Price (AUD)</th>
+                                        <th>Condition</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ebayTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -226,6 +322,114 @@
                         </button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parallels & Variations Section -->
+    <div class="col-lg-8 offset-lg-2 mt-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Parallels &amp; Variations</h5>
+                    <small class="text-muted">Foil parallels, colour variants, errors, corrections — anything that's a different version of this card</small>
+                </div>
+                <% if (card.set_name) { %>
+                <a href="/admin/set-variations?set_name=<%= encodeURIComponent(card.set_name) %>" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-collection"></i> Bulk add for <%= card.set_name %>
+                </a>
+                <% } %>
+            </div>
+            <div class="card-body">
+                <% if (variations && variations.length > 0) { %>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Price</th>
+                                <th>Qty</th>
+                                <th>Condition</th>
+                                <th>Order</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% variations.forEach(v => { %>
+                            <tr>
+                                <td>
+                                    <% if (v.image_url) { %>
+                                    <img src="<%= v.image_url %>" style="height:48px;width:auto;border-radius:4px;">
+                                    <% } else { %>
+                                    <span class="text-muted small">—</span>
+                                    <% } %>
+                                </td>
+                                <td><strong><%= v.variation_name %></strong></td>
+                                <td>$<%= parseFloat(v.price_nzd).toFixed(2) %></td>
+                                <td><%= v.quantity %></td>
+                                <td><%= v.condition || '—' %></td>
+                                <td><%= v.sort_order %></td>
+                                <td class="text-end">
+                                    <a href="/admin/cards/<%= card.id %>/variations/<%= v.id %>/edit" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="/admin/cards/<%= card.id %>/variations/<%= v.id %>/delete" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('Delete <%= v.variation_name %> variation?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                <% } else { %>
+                <p class="text-muted mb-3">No variations yet.</p>
+                <% } %>
+
+                <!-- Add variation form -->
+                <h6 class="mb-3">Add Variation</h6>
+                <form action="/admin/cards/<%= card.id %>/variations/add" method="POST" enctype="multipart/form-data">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Name *</label>
+                            <input type="text" class="form-control form-control-sm" name="variation_name" placeholder="e.g. Pink Parallel" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Price (NZD)</label>
+                            <input type="number" class="form-control form-control-sm" name="price_nzd" step="0.01" min="0" value="0.00">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Qty</label>
+                            <input type="number" class="form-control form-control-sm" name="quantity" min="0" value="0">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Condition</label>
+                            <select class="form-select form-select-sm" name="condition">
+                                <option value="">Any</option>
+                                <option value="mint">Mint</option>
+                                <option value="near_mint">Near Mint</option>
+                                <option value="excellent">Excellent</option>
+                                <option value="good">Good</option>
+                                <option value="played">Played</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">Order</label>
+                            <input type="number" class="form-control form-control-sm" name="sort_order" value="0" min="0">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Image</label>
+                            <input type="file" class="form-control form-control-sm" name="variation_image" accept="image/*">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm mt-3">
+                        <i class="bi bi-plus-circle"></i> Add Variation
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -540,9 +744,116 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Load players for linking
+    const playerSelect = document.getElementById('player_id');
+    const currentPlayerId = playerSelect.dataset.current;
+
+    async function loadPlayers(searchTerm) {
+        try {
+            const url = searchTerm ? `/admin/api/players/search?q=${encodeURIComponent(searchTerm)}` : '/admin/api/players/search?q=';
+            const response = await fetch(url);
+            const players = await response.json();
+            playerSelect.innerHTML = '<option value="">No player linked</option>';
+            players.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = p.name;
+                if (String(p.id) === String(currentPlayerId)) {
+                    option.selected = true;
+                }
+                playerSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading players:', error);
+        }
+    }
+
+    let playerSearchTimeout;
+    const playerSearchInput = document.createElement('input');
+    playerSearchInput.type = 'text';
+    playerSearchInput.className = 'form-control form-control-sm mt-1';
+    playerSearchInput.placeholder = 'Search players...';
+    playerSelect.parentNode.insertBefore(playerSearchInput, playerSelect.querySelector('.text-muted') || playerSelect.nextSibling.nextSibling);
+    playerSearchInput.addEventListener('input', function() {
+        clearTimeout(playerSearchTimeout);
+        playerSearchTimeout = setTimeout(() => loadPlayers(this.value), 300);
+    });
+
+    // Load initial player list (loads current player)
+    loadPlayers('');
+
     // Initialize
     loadManufacturers();
     loadSportTypes();
+});
+
+// eBay price check (Browse API — active listings on eBay AU)
+document.getElementById('ebayCheckBtn').addEventListener('click', async function() {
+    const resultsDiv = document.getElementById('ebayResults');
+    const loadingDiv = document.getElementById('ebayLoading');
+    const errorDiv = document.getElementById('ebayError');
+    const contentDiv = document.getElementById('ebayContent');
+
+    resultsDiv.style.display = 'block';
+    loadingDiv.style.display = 'block';
+    errorDiv.style.display = 'none';
+    contentDiv.style.display = 'none';
+    this.disabled = true;
+
+    try {
+        const response = await fetch('/admin/cards/<%= card.id %>/ebay-check');
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || 'Request failed');
+
+        loadingDiv.style.display = 'none';
+
+        document.getElementById('ebayQuery').textContent = data.query;
+
+        if (data.stats) {
+            document.getElementById('ebayStats').innerHTML = `
+                <div class="col-sm-3"><div class="border rounded p-2 text-center">
+                    <div class="text-muted small">Avg Listed</div>
+                    <div class="fw-bold fs-5 text-warning">$${data.stats.avg.toFixed(2)}</div>
+                </div></div>
+                <div class="col-sm-3"><div class="border rounded p-2 text-center">
+                    <div class="text-muted small">Low</div>
+                    <div class="fw-bold">$${data.stats.min.toFixed(2)}</div>
+                </div></div>
+                <div class="col-sm-3"><div class="border rounded p-2 text-center">
+                    <div class="text-muted small">High</div>
+                    <div class="fw-bold">$${data.stats.max.toFixed(2)}</div>
+                </div></div>
+                <div class="col-sm-3"><div class="border rounded p-2 text-center">
+                    <div class="text-muted small">Listings (AU)</div>
+                    <div class="fw-bold">${data.total}</div>
+                </div></div>
+            `;
+        } else {
+            document.getElementById('ebayStats').innerHTML = '<div class="col-12"><p class="text-muted mb-0">No listings found for this query.</p></div>';
+        }
+
+        const tbody = document.getElementById('ebayTableBody');
+        tbody.innerHTML = data.items.length === 0
+            ? '<tr><td colspan="5" class="text-muted text-center">No results</td></tr>'
+            : data.items.map(item => `
+                <tr>
+                    <td>${item.image ? `<img src="${item.image}" alt="" style="width:50px;height:50px;object-fit:contain;border-radius:4px;">` : '—'}</td>
+                    <td class="small">${item.title}</td>
+                    <td class="small fw-semibold">$${item.price.toFixed(2)} ${item.currency}</td>
+                    <td class="small">${item.condition || '—'}</td>
+                    <td><a href="${item.url}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm py-0">View</a></td>
+                </tr>
+            `).join('');
+
+        contentDiv.style.display = 'block';
+    } catch (err) {
+        loadingDiv.style.display = 'none';
+        errorDiv.textContent = err.message;
+        errorDiv.style.display = 'block';
+    } finally {
+        this.disabled = false;
+    }
 });
 
 // Preview selected images

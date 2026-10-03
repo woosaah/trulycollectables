@@ -1,0 +1,133 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Sets</h2>
+        <a href="/admin/sets/add" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Set
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/admin/sets" method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Search sets...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="sport_type">
+                        <option value="">All Types</option>
+                        <% sportTypes.forEach(type => { %>
+                        <option value="<%= type %>" <%= filters.sport_type === type ? 'selected' : '' %>><%= type %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="manufacturer">
+                        <option value="">All Manufacturers</option>
+                        <% manufacturers.forEach(mfg => { %>
+                        <option value="<%= mfg %>" <%= filters.manufacturer === mfg ? 'selected' : '' %>><%= mfg %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <% if (sets && sets.length > 0) { %>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Set Name</th>
+                    <th>Manufacturer</th>
+                    <th>Type</th>
+                    <th>Year</th>
+                    <th>Category</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% sets.forEach(set => { %>
+                <tr style="cursor: pointer;" data-href="/admin/sets/<%= set.id %>/edit">
+                    <td>
+                        <% if (set.image_url) { %>
+                        <img src="<%= set.image_url %>" alt="<%= set.set_name %>" style="width: 60px; height: 60px; object-fit: cover;">
+                        <% } else { %>
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-image text-muted"></i>
+                        </div>
+                        <% } %>
+                    </td>
+                    <td>
+                        <a href="/admin/sets/<%= set.id %>/edit" class="text-decoration-none text-dark"><strong><%= set.set_name %></strong></a>
+                        <% if (set.description) { %>
+                        <br><small class="text-muted"><%= set.description.substring(0, 60) %><%= set.description.length > 60 ? '...' : '' %></small>
+                        <% } %>
+                    </td>
+                    <td><%= set.manufacturer || 'N/A' %></td>
+                    <td><%= set.sport_type || 'N/A' %></td>
+                    <td><%= set.year || 'N/A' %></td>
+                    <td>
+                        <% if (set.card_category) { %>
+                        <span class="badge bg-<%= set.card_category === 'sport' ? 'primary' : 'secondary' %>">
+                            <%= set.card_category %>
+                        </span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <a href="/admin/sets/<%= set.id %>/edit" class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="/admin/sets/<%= set.id %>/delete" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this set?');">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+    <nav>
+        <ul class="pagination justify-content-center">
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage - 1 %>">Previous</a>
+            </li>
+            <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+            </li>
+            <% } %>
+            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage + 1 %>">Next</a>
+            </li>
+        </ul>
+    </nav>
+    <% } %>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No sets found.
+    </div>
+    <% } %>
+</div>
+
+<script>
+document.querySelectorAll('tr[data-href]').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+        if (e.target.closest('a, button, form')) return;
+        window.location.href = this.dataset.href;
+    });
+});
+</script>
+
+<%- include('../partials/footer') %>

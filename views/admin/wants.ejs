@@ -4,7 +4,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>User Wanted Cards</h2>
         <div>
-            <span class="badge bg-info fs-6"><%= wantedCards.length %> Total Wants</span>
+            <span class="badge bg-info fs-6"><%= userSummary.length %> user<%= userSummary.length !== 1 ? 's' : '' %> wanting cards</span>
         </div>
     </div>
 
@@ -54,68 +54,39 @@
         </div>
     </div>
 
-    <!-- All Wanted Cards -->
+    <!-- Per-user summary -->
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">
-                <i class="bi bi-list-ul"></i> All User Wants
-            </h5>
+            <h5 class="mb-0"><i class="bi bi-people"></i> Users Wanting Cards</h5>
         </div>
         <div class="card-body">
-            <% if (wantedCards && wantedCards.length > 0) { %>
+            <% if (userSummary && userSummary.length > 0) { %>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover align-middle">
                     <thead>
                         <tr>
                             <th>User</th>
-                            <th>Card Name</th>
-                            <th>Set</th>
-                            <th>Manufacturer</th>
-                            <th>Insert</th>
-                            <th>Number</th>
-                            <th>Year</th>
-                            <th>Type</th>
-                            <th>Notes</th>
-                            <th>Added</th>
-                            <th>Popularity</th>
+                            <th>Wants</th>
+                            <th>Sets</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <% wantedCards.forEach(want => { %>
+                        <% userSummary.forEach(u => { %>
                         <tr>
                             <td>
-                                <div>
-                                    <strong><%= want.username %></strong>
-                                    <br>
-                                    <small class="text-muted"><%= want.email %></small>
-                                </div>
+                                <strong><%= u.username %></strong>
+                                <br><small class="text-muted"><%= u.email %></small>
                             </td>
-                            <td><strong><%= want.card_name %></strong></td>
-                            <td><%= want.set_name || '-' %></td>
-                            <td><%= want.manufacturer || '-' %></td>
-                            <td><%= want.insert_list || 'Base' %></td>
-                            <td><%= want.card_number || '-' %></td>
-                            <td><%= want.year || '-' %></td>
                             <td>
-                                <% if (want.sport_type) { %>
-                                <span class="badge bg-info"><%= want.sport_type %></span>
-                                <% } else { %>
-                                -
-                                <% } %>
+                                <span class="badge bg-primary fs-6"><%= u.want_count %></span>
                             </td>
-                            <td class="small"><%= want.notes || '-' %></td>
-                            <td class="small"><%= new Date(want.created_at).toLocaleDateString() %></td>
                             <td>
-                                <% if (want.want_count > 1) { %>
-                                <span class="badge bg-warning text-dark">
-                                    <i class="bi bi-people-fill"></i> <%= want.want_count %>
-                                </span>
-                                <% } else { %>
-                                <span class="badge bg-light text-dark">1</span>
-                                <% } %>
+                                <% (u.sets_wanted || []).forEach(s => { %>
+                                <span class="badge bg-secondary me-1 mb-1"><%= s.set_name %> (<%= s.count %>)</span>
+                                <% }) %>
                             </td>
                         </tr>
-                        <% }); %>
+                        <% }) %>
                     </tbody>
                 </table>
             </div>

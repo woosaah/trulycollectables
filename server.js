@@ -27,8 +27,8 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Body parsing middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Static files
@@ -54,10 +54,20 @@ app.use(session({
 // CSRF protection
 app.use(csrfProtection);
 
-// Make user available to all templates
-app.use((req, res, next) => {
+// Make user and query params available to all templates
+app.use(async (req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.isAdmin = req.session.user && req.session.user.role === 'admin';
+    res.locals.isSocietyMember = req.session.user && req.session.user.is_society_member === true;
+    res.locals.success = req.query.success || req.query.inquiry || null;
+    res.locals.cartCount = 0;
+    if (req.session.user) {
+        try {
+            const Cart = require('./models/Cart');
+            const cartItems = await Cart.getByUser(req.session.user.id);
+            res.locals.cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+        } catch (e) { /* ignore */ }
+    }
     next();
 });
 
@@ -66,11 +76,13 @@ const publicRoutes = require('./routes/public');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const adminRoutes = require('./routes/admin');
+const apiRoutes = require('./routes/api');
 
 app.use('/', publicRoutes);
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/admin', adminRoutes);
+app.use('/api/v1', apiRoutes);
 
 // 404 handler
 app.use((req, res) => {

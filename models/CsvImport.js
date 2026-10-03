@@ -2,8 +2,75 @@ const db = require('../config/database');
 const fs = require('fs');
 const { parse } = require('csv-parse');
 const Card = require('./Card');
+const Set = require('./Set');
 
 class CsvImport {
+  /**
+   * Ensure sport type exists in sport_types table, create if not
+   */
+  static async ensureSportType(client, name) {
+    if (!name || name.trim() === '') return null;
+    const trimmed = name.trim();
+    const existing = await client.query('SELECT id FROM sport_types WHERE LOWER(name) = LOWER($1)', [trimmed]);
+    if (existing.rows.length > 0) return existing.rows[0].id;
+    const result = await client.query('INSERT INTO sport_types (name) VALUES ($1) RETURNING id', [trimmed]);
+    return result.rows[0].id;
+  }
+
+  /**
+   * Ensure manufacturer exists in manufacturers table, create if not
+   */
+  static async ensureManufacturer(client, name) {
+    if (!name || name.trim() === '') return null;
+    const trimmed = name.trim();
+    const existing = await client.query('SELECT id FROM manufacturers WHERE LOWER(name) = LOWER($1)', [trimmed]);
+    if (existing.rows.length > 0) return existing.rows[0].id;
+    const result = await client.query('INSERT INTO manufacturers (name) VALUES ($1) RETURNING id', [trimmed]);
+    return result.rows[0].id;
+  }
+
+  /**
+   * Ensure card set exists in card_sets table, create if not
+   */
+  static async ensureCardSet(client, setName, manufacturerId, year) {
+    if (!setName || setName.trim() === '') return null;
+    const trimmed = setName.trim();
+
+    let query = 'SELECT id FROM card_sets WHERE LOWER(set_name) = LOWER($1)';
+    const params = [trimmed];
+    if (manufacturerId) {
+      query += ' AND manufacturer_id = $2';
+      params.push(manufacturerId);
+    }
+    const existing = await client.query(query, params);
+    if (existing.rows.length > 0) return existing.rows[0].id;
+
+    const result = await client.query(
+      'INSERT INTO card_sets (set_name, manufacturer_id, year) VALUES ($1, $2, $3) RETURNING id',
+      [trimmed, manufacturerId, year ? parseInt(year) : null]
+    );
+    return result.rows[0].id;
+  }
+
+  /**
+   * Ensure insert exists in card_inserts table, create if not
+   */
+  static async ensureInsert(client, insertName, cardSetId) {
+    if (!insertName || insertName.trim() === '') return null;
+    if (!cardSetId) return null;
+    const trimmed = insertName.trim();
+    const existing = await client.query(
+      'SELECT id FROM card_inserts WHERE LOWER(insert_name) = LOWER($1) AND card_set_id = $2',
+      [trimmed, cardSetId]
+    );
+    if (existing.rows.length > 0) return existing.rows[0].id;
+    const result = await client.query(
+      'INSERT INTO card_inserts (card_set_id, insert_name) VALUES ($1, $2) RETURNING id',
+      [cardSetId, trimmed]
+    );
+    return result.rows[0].id;
+  }
+
   /**
    * Parse and validate CSV file
    * @param {string} filePath - Path to CSV file
@@ -76,7 +143,12 @@ class CsvImport {
       quantity: columnMapping.quantity || 'quantity',
       image_front: columnMapping.image_front || 'image_front',
       image_back: columnMapping.image_back || 'image_back',
-      description: columnMapping.description || 'description'
+      description: columnMapping.description || 'description',
+      team: columnMapping.team || 'team',
+      variation: columnMapping.variation || 'variation',
+      notes: columnMapping.notes || 'notes',
+      is_rookie_card: columnMapping.is_rookie_card || 'is_rookie_card',
+      product_type: columnMapping.product_type || 'product_type'
     };
 
     for (const [dbField, csvField] of Object.entries(fieldMap)) {
@@ -89,23 +161,43 @@ class CsvImport {
   }
 
   /**
-   * Validate row data
+   * Validate row data — mirrors the card-add form requirements
    */
   static validateRow(row, rowNumber) {
     const errors = [];
 
-    // Required fields
+    // Required fields (same as card-add form)
     if (!row.card_name || row.card_name.trim() === '') {
       errors.push('Card name is required');
     }
 
-    // Validate card_category
+    // card_category is required (sport or non_sport)
     const validCategories = ['sport', 'non_sport'];
-    if (row.card_category && !validCategories.includes(row.card_category.toLowerCase())) {
+    if (!row.card_category || row.card_category.trim() === '') {
+      errors.push('Category is required (sport or non_sport)');
+    } else if (!validCategories.includes(row.card_category.toLowerCase())) {
       errors.push(`Invalid category: ${row.card_category}. Must be one of: ${validCategories.join(', ')}`);
     }
 
-    // Validate year
+    // price_nzd is required
+    if (!row.price_nzd || row.price_nzd.toString().trim() === '') {
+      errors.push('Price (NZD) is required');
+    } else {
+      const price = parseFloat(row.price_nzd);
+      if (isNaN(price) || price < 0) {
+        errors.push(`Invalid price: ${row.price_nzd}`);
+      }
+    }
+
+    // quantity is optional, 0 is valid (out of stock)
+    if (row.quantity !== undefined && row.quantity !== '') {
+      const qty = parseInt(row.quantity);
+      if (isNaN(qty) || qty < 0) {
+        errors.push(`Invalid quantity: ${row.quantity}. Must be 0 or more`);
+      }
+    }
+
+    // Validate year if provided
     if (row.year) {
       const year = parseInt(row.year);
       if (isNaN(year) || year < 1800 || year > new Date().getFullYear() + 1) {
@@ -113,26 +205,31 @@ class CsvImport {
       }
     }
 
-    // Validate price
-    if (row.price_nzd) {
-      const price = parseFloat(row.price_nzd);
-      if (isNaN(price) || price < 0) {
-        errors.push(`Invalid price: ${row.price_nzd}`);
-      }
-    }
-
-    // Validate quantity
-    if (row.quantity) {
-      const qty = parseInt(row.quantity);
-      if (isNaN(qty) || qty < 0) {
-        errors.push(`Invalid quantity: ${row.quantity}`);
-      }
-    }
-
-    // Validate condition
+    // Validate condition if provided
     const validConditions = ['mint', 'near_mint', 'excellent', 'good', 'played'];
     if (row.condition && !validConditions.includes(row.condition.toLowerCase())) {
       errors.push(`Invalid condition: ${row.condition}. Must be one of: ${validConditions.join(', ')}`);
+    }
+
+    // Validate product_type if provided
+    const validProductTypes = ['single', 'pack', 'box'];
+    if (row.product_type && !validProductTypes.includes(row.product_type.toLowerCase())) {
+      errors.push(`Invalid product type: ${row.product_type}. Must be one of: ${validProductTypes.join(', ')}`);
+    }
+
+    // Validate variation if provided
+    const validVariations = ['error', 'correction', 'uer', 'short print', 'other'];
+    if (row.variation && !validVariations.includes(row.variation.toLowerCase())) {
+      errors.push(`Invalid variation: ${row.variation}. Must be one of: Error, Correction, UER, Short Print, Other`);
+    }
+
+    // Validate is_rookie_card if provided
+    if (row.is_rookie_card) {
+      const val = row.is_rookie_card.toString().toLowerCase();
+      const validBools = ['true', 'false', 'yes', 'no', '1', '0', 'y', 'n'];
+      if (!validBools.includes(val)) {
+        errors.push(`Invalid is_rookie_card: ${row.is_rookie_card}. Use yes/no or true/false`);
+      }
     }
 
     return {
@@ -195,7 +292,7 @@ class CsvImport {
    * @returns {Promise<object>} - Import results
    */
   static async importCards(rows, userId, filename, duplicateAction = 'skip') {
-    const client = await db.pool.getClient();
+    const client = await db.connect();
     let importId;
     let successful = 0;
     let failed = 0;
@@ -218,9 +315,11 @@ class CsvImport {
       const { duplicates, unique } = await this.detectDuplicates(rows);
 
       // Process unique cards
+      const createdCards = [];
       for (const row of unique) {
         try {
-          await this.insertCard(client, row, userId);
+          const cardId = await this.insertCard(client, row, userId);
+          if (cardId && row.set_name) createdCards.push({ id: cardId, set_name: row.set_name });
           successful++;
         } catch (error) {
           failed++;
@@ -267,12 +366,22 @@ class CsvImport {
              failed_rows = $2,
              duplicates_skipped = $3,
              status = 'completed',
-             error_log = $4
+             error_log = $4,
+             completed_at = NOW()
          WHERE id = $5`,
         [successful, failed, skipped, JSON.stringify(errorLog), importId]
       );
 
       await client.query('COMMIT');
+
+      // Apply set parallels to newly created cards (after commit so cards are visible)
+      for (const card of createdCards) {
+        try {
+          await Set.applyParallelsToCard(card.id, card.set_name);
+        } catch (e) {
+          console.warn(`Failed to apply parallels to card ${card.id}:`, e.message);
+        }
+      }
 
       return {
         importId,
@@ -300,15 +409,39 @@ class CsvImport {
   }
 
   /**
-   * Insert new card from CSV data
+   * Insert new card from CSV data — auto-creates sport types, manufacturers, sets, and inserts
    */
   static async insertCard(client, row, userId) {
+    // Auto-create related entities if they don't exist
+    if (row.sport_type) {
+      await this.ensureSportType(client, row.sport_type);
+    }
+
+    let manufacturerId = null;
+    if (row.manufacturer) {
+      manufacturerId = await this.ensureManufacturer(client, row.manufacturer);
+    }
+
+    let cardSetId = null;
+    if (row.set_name) {
+      cardSetId = await this.ensureCardSet(client, row.set_name, manufacturerId, row.year);
+    }
+
+    if (row.insert_list) {
+      await this.ensureInsert(client, row.insert_list, cardSetId);
+    }
+
+    // Parse is_rookie_card boolean
+    const isRookie = row.is_rookie_card ?
+      ['true', 'yes', '1', 'y'].includes(row.is_rookie_card.toString().toLowerCase()) : false;
+
     const query = `
       INSERT INTO cards (
         card_name, set_name, card_number, manufacturer, insert_list,
         year, card_category, sport_type, condition, price_nzd, quantity,
-        image_front, image_back, description, available
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true)
+        image_front, image_back, description, available,
+        team, variation, notes, is_rookie_card, product_type
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, true, $15, $16, $17, $18, $19)
       RETURNING id
     `;
 
@@ -326,19 +459,40 @@ class CsvImport {
       row.quantity ? parseInt(row.quantity) : 1,
       row.image_front || null,
       row.image_back || null,
-      row.description || null
+      row.description || null,
+      row.team || null,
+      row.variation || null,
+      row.notes || null,
+      isRookie,
+      row.product_type ? row.product_type.toLowerCase() : 'single'
     ];
 
     const result = await client.query(query, values);
-
-    // Track initial price in history (will be done by trigger)
     return result.rows[0].id;
   }
 
   /**
-   * Update existing card with CSV data
+   * Update existing card with CSV data — auto-creates related entities
    */
   static async updateCard(client, cardId, row, userId) {
+    // Auto-create related entities if they don't exist
+    if (row.sport_type) {
+      await this.ensureSportType(client, row.sport_type);
+    }
+    let manufacturerId = null;
+    if (row.manufacturer) {
+      manufacturerId = await this.ensureManufacturer(client, row.manufacturer);
+    }
+    if (row.set_name) {
+      const cardSetId = await this.ensureCardSet(client, row.set_name, manufacturerId, row.year);
+      if (row.insert_list) {
+        await this.ensureInsert(client, row.insert_list, cardSetId);
+      }
+    }
+
+    const isRookie = row.is_rookie_card ?
+      ['true', 'yes', '1', 'y'].includes(row.is_rookie_card.toString().toLowerCase()) : false;
+
     const query = `
       UPDATE cards
       SET card_name = $1,
@@ -354,8 +508,13 @@ class CsvImport {
           quantity = $11,
           image_front = $12,
           image_back = $13,
-          description = $14
-      WHERE id = $15
+          description = $14,
+          team = $15,
+          variation = $16,
+          notes = $17,
+          is_rookie_card = $18,
+          product_type = $19
+      WHERE id = $20
     `;
 
     const values = [
@@ -373,6 +532,11 @@ class CsvImport {
       row.image_front || null,
       row.image_back || null,
       row.description || null,
+      row.team || null,
+      row.variation || null,
+      row.notes || null,
+      isRookie,
+      row.product_type ? row.product_type.toLowerCase() : 'single',
       cardId
     ];
 
@@ -425,80 +589,162 @@ class CsvImport {
   }
 
   /**
-   * Generate sample CSV template
+   * Generate sample CSV template — matches card-add form fields
    */
   static generateTemplate() {
     const headers = [
       'card_name',
-      'set_name',
-      'card_number',
       'manufacturer',
+      'set_name',
       'insert_list',
+      'card_number',
       'year',
       'card_category',
       'sport_type',
       'condition',
       'price_nzd',
       'quantity',
+      'product_type',
+      'team',
+      'variation',
+      'is_rookie_card',
+      'notes',
+      'description',
       'image_front',
-      'image_back',
-      'description'
+      'image_back'
     ];
 
     const sampleRows = [
       [
-        'Michael Jordan Rookie',
-        '1986 Fleer Basketball',
-        '57',
-        'Fleer',
+        'Beauden Barrett',
+        'Tap N Play',
+        '2024 All Blacks',
         'Base Set',
-        '1986',
+        '10',
+        '2024',
         'sport',
-        'Basketball',
+        'Rugby',
+        'mint',
+        '5.00',
+        '4',
+        'single',
+        'All Blacks',
+        '',
+        'no',
+        '',
+        'All Blacks first five-eighth',
+        '',
+        ''
+      ],
+      [
+        'Kane Williamson',
+        'Tap N Play',
+        '2023 NZ Cricket',
+        'Double Trouble',
+        '22',
+        '2023',
+        'sport',
+        'Cricket',
         'near_mint',
-        '125.00',
+        '8.00',
         '1',
+        'single',
+        'Black Caps',
         '',
+        'no',
         '',
-        'Iconic rookie card in excellent condition'
+        'NZ cricket captain',
+        '',
+        ''
+      ],
+      [
+        'Shaun Johnson Rookie',
+        'Select',
+        '2012 NRL',
+        'Base Set',
+        '99',
+        '2012',
+        'sport',
+        'Rugby League',
+        'near_mint',
+        '25.00',
+        '1',
+        'single',
+        'Warriors',
+        '',
+        'yes',
+        '',
+        'Rookie card',
+        '',
+        ''
       ],
       [
         'Pikachu',
-        'Base Set',
-        '58',
         'Wizards of the Coast',
-        'Common',
+        'Base Set',
+        '',
+        '58',
         '1999',
         'non_sport',
         'Pokemon',
         'mint',
         '45.00',
         '3',
+        'single',
         '',
         '',
-        'Classic Pokemon card from the original base set'
+        'no',
+        '',
+        'Original base set',
+        '',
+        ''
       ],
       [
-        'Lewis Hamilton Podium Power',
-        'F1 2023 Season',
-        '44',
-        'Topps',
-        'Master Set',
-        '2023',
+        '2024 All Blacks Box',
+        'Tap N Play',
+        '2024 All Blacks',
+        '',
+        '',
+        '2024',
         'sport',
-        'Other',
+        'Rugby',
         'mint',
-        '15.00',
+        '89.99',
         '2',
+        'box',
         '',
         '',
-        'F1 racing card featuring Lewis Hamilton'
+        'no',
+        'Sealed box',
+        '36 packs per box',
+        '',
+        ''
+      ],
+      [
+        '2024 All Blacks Pack',
+        'Tap N Play',
+        '2024 All Blacks',
+        '',
+        '',
+        '2024',
+        'sport',
+        'Rugby',
+        'mint',
+        '4.99',
+        '10',
+        'pack',
+        '',
+        '',
+        'no',
+        '',
+        '8 cards per pack',
+        '',
+        ''
       ]
     ];
 
     const csvLines = [headers.join(',')];
     sampleRows.forEach(row => {
-      // Properly escape CSV values that contain commas or quotes
       const escapedRow = row.map(value => {
         if (value.includes(',') || value.includes('"') || value.includes('\n')) {
           return `"${value.replace(/"/g, '""')}"`;

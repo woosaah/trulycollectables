@@ -4,14 +4,19 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="/">Home</a></li>
-            <li class="breadcrumb-item"><a href="/cards">Cards</a></li>
+            <% if (card.set_name) { %>
+            <li class="breadcrumb-item"><a href="/sport-cards?set_name=<%= encodeURIComponent(card.set_name) %>"><%= card.set_name %></a></li>
+            <% } else { %>
+            <li class="breadcrumb-item"><a href="/sport-cards">Cards</a></li>
+            <% } %>
             <li class="breadcrumb-item active"><%= card.card_name %></li>
         </ol>
     </nav>
 
-    <% if (typeof req !== 'undefined' && req.query.inquiry === 'success') { %>
+    <% if (success === 'success') { %>
     <div class="alert alert-success alert-dismissible fade show">
         <i class="bi bi-check-circle"></i> Your inquiry has been submitted successfully!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     <% } %>
 
@@ -79,6 +84,12 @@
             <h1 class="mb-3"><%= card.card_name %></h1>
 
             <div class="mb-3">
+                <% if (card.is_rookie_card) { %>
+                <span class="badge bg-warning text-dark me-2">RC</span>
+                <% } %>
+                <% if (card.insert_list && !/^base/i.test(card.insert_list)) { %>
+                <span class="badge bg-info text-dark me-2"><%= card.insert_list %></span>
+                <% } %>
                 <% if (card.condition) { %>
                 <span class="badge badge-<%= card.condition.toLowerCase().replace(/[^a-z]/g, '') %> me-2">
                     <%= card.condition %>
@@ -89,7 +100,36 @@
                 <% } %>
             </div>
 
-            <div class="price-tag mb-4">NZD $<%= card.price_nzd.toFixed(2) %></div>
+            <div class="price-tag mb-2" id="display-price">
+                <% if (card.price_nzd) { %>NZD $<%= parseFloat(card.price_nzd).toFixed(2) %><% } else { %><span class="badge bg-secondary fs-6">Price TBC</span><% } %>
+            </div>
+
+            <% if (variations && variations.length > 0) { %>
+            <div class="mb-4">
+                <label class="form-label fw-semibold small text-muted text-uppercase">Select Variation</label>
+                <div class="d-flex flex-wrap gap-2" id="variation-picker">
+                    <button type="button"
+                            class="btn btn-sm btn-primary variation-chip"
+                            data-var-id=""
+                            data-price="<%= parseFloat(card.price_nzd).toFixed(2) %>"
+                            data-qty="<%= card.quantity %>"
+                            data-image="<%= card.image_front || '' %>">
+                        Base
+                    </button>
+                    <% variations.filter(v => v.quantity > 0).forEach(v => { %>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary variation-chip"
+                            data-var-id="<%= v.id %>"
+                            data-price="<%= parseFloat(v.price_nzd).toFixed(2) %>"
+                            data-qty="<%= v.quantity %>"
+                            data-image="<%= v.image_url || '' %>">
+                        <%= v.variation_name %>
+                        <span class="badge bg-success ms-1" style="font-size:0.65rem;">In Stock</span>
+                    </button>
+                    <% }); %>
+                </div>
+            </div>
+            <% } %>
 
             <table class="table table-sm mb-4">
                 <tbody>
@@ -111,10 +151,36 @@
                         <td><%= card.year %></td>
                     </tr>
                     <% } %>
+                    <% if (typeof player !== 'undefined' && player) { %>
+                    <tr>
+                        <th>Player:</th>
+                        <td><a href="/players/<%= player.id %>"><%= player.name %></a> <i class="bi bi-box-arrow-up-right small"></i></td>
+                    </tr>
+                    <% } %>
+                    <% if (card.team) { %>
+                    <tr>
+                        <th>Team:</th>
+                        <td><a href="/team/<%= encodeURIComponent(card.team) %>"><%= card.team %></a></td>
+                    </tr>
+                    <% } %>
+                    <% if (card.insert_list) { %>
+                    <tr>
+                        <th>Subset / Insert:</th>
+                        <td><%= card.insert_list %></td>
+                    </tr>
+                    <% } %>
+                    <% if (card.variation) { %>
+                    <tr>
+                        <th>Variation:</th>
+                        <td><%= card.variation %></td>
+                    </tr>
+                    <% } %>
                     <tr>
                         <th>Availability:</th>
-                        <td>
-                            <% if (card.quantity > 0) { %>
+                        <td id="display-stock">
+                            <% if (!card.price_nzd) { %>
+                            <span class="text-secondary"><i class="bi bi-hourglass-split"></i> Coming Soon</span>
+                            <% } else if (card.quantity > 0) { %>
                             <span class="text-success"><i class="bi bi-check-circle"></i> <%= card.quantity %> in stock</span>
                             <% } else { %>
                             <span class="text-danger"><i class="bi bi-x-circle"></i> Out of stock</span>
@@ -132,12 +198,18 @@
             <% } %>
 
             <!-- Action Buttons -->
-            <% if (card.quantity > 0) { %>
-            <form action="/user/cart/add" method="POST" class="mb-3">
+            <div id="cart-section">
+            <% if (!card.price_nzd) { %>
+            <div class="alert alert-info mb-3" id="price-tbc-msg">
+                <i class="bi bi-clock"></i> <strong>Price to be confirmed.</strong> Contact us to register your interest.
+            </div>
+            <% } else if (card.quantity > 0) { %>
+            <form action="/user/cart/add" method="POST" class="mb-3" id="add-to-cart-form">
                 <input type="hidden" name="card_id" value="<%= card.id %>">
+                <input type="hidden" name="variation_id" id="cart-variation-id" value="">
                 <div class="row g-2">
                     <div class="col-4">
-                        <input type="number" class="form-control" name="quantity" value="1" min="1" max="<%= card.quantity %>">
+                        <input type="number" class="form-control" name="quantity" id="cart-qty" value="1" min="1" max="<%= card.quantity %>">
                     </div>
                     <div class="col-8">
                         <button type="submit" class="btn btn-primary w-100">
@@ -147,15 +219,172 @@
                 </div>
             </form>
             <% } else { %>
-            <div class="alert alert-warning">
+            <div class="alert alert-warning" id="out-of-stock-msg">
                 <i class="bi bi-exclamation-triangle"></i> This card is currently out of stock.
             </div>
             <% } %>
+            </div>
 
             <!-- Contact About This Card -->
-            <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#inquiryModal">
+            <button type="button" class="btn btn-outline-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#inquiryModal">
                 <i class="bi bi-envelope"></i> Contact About This Card
             </button>
+
+            <!-- Collection Toggles -->
+            <% if (user) { %>
+            <div class="d-flex gap-2 mb-2">
+                <button id="btn-have" class="btn flex-fill <%= inCollection ? 'btn-success' : 'btn-outline-secondary' %>"
+                        data-card-id="<%= card.id %>" data-csrf="<%= csrfToken %>" data-active="<%= inCollection %>">
+                    <i class="bi <%= inCollection ? 'bi-check-circle-fill' : 'bi-plus-circle' %>"></i>
+                    I Have It
+                </button>
+                <button id="btn-want" class="btn flex-fill <%= wantCollection ? 'btn-warning' : 'btn-outline-warning' %>"
+                        data-card-id="<%= card.id %>" data-csrf="<%= csrfToken %>" data-active="<%= wantCollection %>">
+                    <i class="bi <%= wantCollection ? 'bi-star-fill' : 'bi-star' %>"></i>
+                    I Want It
+                </button>
+            </div>
+            <% } else { %>
+            <a href="/auth/login" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="bi bi-plus-circle"></i> Login to Track in Collection
+            </a>
+            <% } %>
+
+            <!-- Community Stats -->
+            <div id="community-stats" class="d-flex gap-2 mt-2">
+                <% if (cardStats.have > 0) { %>
+                <span id="stat-have" class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 flex-fill text-center">
+                    <i class="bi bi-people-fill"></i> <span id="stat-have-count"><%= cardStats.have %></span> collector<%= cardStats.have !== 1 ? 's' : '' %> own this
+                </span>
+                <% } else { %>
+                <span id="stat-have" class="d-none badge bg-success-subtle text-success border border-success-subtle px-3 py-2 flex-fill text-center">
+                    <i class="bi bi-people-fill"></i> <span id="stat-have-count">0</span> collectors own this
+                </span>
+                <% } %>
+                <% if (cardStats.want > 0) { %>
+                <span id="stat-want" class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 flex-fill text-center">
+                    <i class="bi bi-star-fill"></i> <span id="stat-want-count"><%= cardStats.want %></span> want this
+                </span>
+                <% } else { %>
+                <span id="stat-want" class="d-none badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 flex-fill text-center">
+                    <i class="bi bi-star-fill"></i> <span id="stat-want-count">0</span> want this
+                </span>
+                <% } %>
+            </div>
+
+            <script>
+            (function() {
+                // Variation picker
+                const allImages = <%- JSON.stringify((function(){
+                    const imgs = [];
+                    if (card.image_front) imgs.push({url: card.image_front, label: 'Front'});
+                    if (card.image_back) imgs.push({url: card.image_back, label: 'Back'});
+                    return imgs;
+                })()) %>;
+                const baseQty = <%= card.quantity %>;
+                let currentVariationId = null;
+
+                document.querySelectorAll('.variation-chip').forEach(function(chip) {
+                    chip.addEventListener('click', function() {
+                        document.querySelectorAll('.variation-chip').forEach(c => {
+                            c.classList.remove('btn-primary');
+                            c.classList.add('btn-outline-primary');
+                        });
+                        this.classList.remove('btn-outline-primary');
+                        this.classList.add('btn-primary');
+
+                        const varId = this.dataset.varId;
+                        const price = this.dataset.price;
+                        const qty = parseInt(this.dataset.qty, 10);
+                        const image = this.dataset.image;
+
+                        currentVariationId = varId || null;
+
+                        // Update price
+                        const priceEl = document.getElementById('display-price');
+                        if (priceEl) priceEl.textContent = 'NZD $' + parseFloat(price).toFixed(2);
+
+                        // Swap main image if variation has one
+                        if (image) {
+                            const mainImg = document.querySelector('.product-image-main');
+                            if (mainImg) mainImg.src = image;
+                        } else if (allImages.length > 0) {
+                            const mainImg = document.querySelector('.product-image-main');
+                            if (mainImg) mainImg.src = allImages[0].url;
+                        }
+
+                        // Update stock display
+                        const stockEl = document.getElementById('display-stock');
+                        if (stockEl) {
+                            stockEl.innerHTML = qty > 0
+                                ? '<span class="text-success"><i class="bi bi-check-circle"></i> ' + qty + ' in stock</span>'
+                                : '<span class="text-danger"><i class="bi bi-x-circle"></i> Out of stock</span>';
+                        }
+
+                        // Update cart form
+                        const varInput = document.getElementById('cart-variation-id');
+                        if (varInput) varInput.value = varId || '';
+                        const qtyInput = document.getElementById('cart-qty');
+                        if (qtyInput) qtyInput.max = qty;
+
+                        // Show/hide cart vs out-of-stock
+                        const cartForm = document.getElementById('add-to-cart-form');
+                        const oos = document.getElementById('out-of-stock-msg');
+                        if (cartForm) cartForm.style.display = qty > 0 ? '' : 'none';
+                        if (oos) oos.style.display = qty > 0 ? 'none' : '';
+                    });
+                });
+
+                // Collection toggle — passes current variation ID
+                function toggleCollection(btn, url, activeClass, inactiveClass, activeIcon, inactiveIcon, onComplete) {
+                    btn.disabled = true;
+                    fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': btn.dataset.csrf },
+                        body: JSON.stringify({ _csrf: btn.dataset.csrf, variation_id: currentVariationId || '' })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success) return;
+                        btn.dataset.active = data.active;
+                        const icon = btn.querySelector('i');
+                        if (data.active) {
+                            btn.className = btn.className.replace(inactiveClass, activeClass);
+                            icon.className = icon.className.replace(inactiveIcon, activeIcon);
+                        } else {
+                            btn.className = btn.className.replace(activeClass, inactiveClass);
+                            icon.className = icon.className.replace(activeIcon, inactiveIcon);
+                        }
+                        updateStat('stat-have', 'stat-have-count', data.stats.have, 'collector' + (data.stats.have !== 1 ? 's' : '') + ' own this');
+                        updateStat('stat-want', 'stat-want-count', data.stats.want, 'want this');
+                        if (onComplete) onComplete(data);
+                    })
+                    .finally(() => { btn.disabled = false; });
+                }
+
+                function updateStat(spanId, countId, count, label) {
+                    const span = document.getElementById(spanId);
+                    const countEl = document.getElementById(countId);
+                    if (!span || !countEl) return;
+                    countEl.textContent = count;
+                    span.querySelector('i').nextSibling.textContent = ' ' + count + ' ' + label;
+                    span.classList.toggle('d-none', count === 0);
+                }
+
+                const haveBtn = document.getElementById('btn-have');
+                const wantBtn = document.getElementById('btn-want');
+                if (haveBtn) {
+                    haveBtn.addEventListener('click', () =>
+                        toggleCollection(haveBtn, '/user/collection/toggle/' + haveBtn.dataset.cardId,
+                            'btn-success', 'btn-outline-secondary', 'bi-check-circle-fill', 'bi-plus-circle'));
+                }
+                if (wantBtn) {
+                    wantBtn.addEventListener('click', () =>
+                        toggleCollection(wantBtn, '/user/collection/want/' + wantBtn.dataset.cardId,
+                            'btn-warning', 'btn-outline-warning', 'bi-star-fill', 'bi-star'));
+                }
+            })();
+            </script>
         </div>
     </div>
 </div>

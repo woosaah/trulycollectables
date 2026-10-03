@@ -1,0 +1,137 @@
+<%- include('../partials/header') %>
+
+<div class="container py-4">
+    <h1 class="mb-1">Search results</h1>
+    <p class="text-muted mb-4">Results for &ldquo;<%= q %>&rdquo;</p>
+
+    <% const total = cards.length + accessories.length + figurines.length; %>
+    <% if (total === 0) { %>
+    <div class="alert alert-light border">
+        <i class="bi bi-search me-2"></i>Nothing found for &ldquo;<%= q %>&rdquo;. Try a different term.
+    </div>
+    <% } %>
+
+    <% if (cards.length > 0) { %>
+    <%
+        const sportTypes = [...new Set(cards.map(c => c.sport_type).filter(Boolean))].sort();
+    %>
+    <section class="mb-5">
+        <h2 class="h5 border-bottom pb-2 mb-3">Cards <span class="text-muted fw-normal fs-6" id="card-count">(<%= cards.length %> result<%= cards.length !== 1 ? 's' : '' %>)</span></h2>
+
+        <% if (sportTypes.length > 1) { %>
+        <div class="d-flex flex-wrap gap-2 mb-3" id="sport-filters">
+            <button class="btn btn-sm btn-primary sport-pill active" data-sport="all">All</button>
+            <% sportTypes.forEach(sport => { %>
+            <button class="btn btn-sm btn-outline-primary sport-pill" data-sport="<%= sport %>"><%= sport %></button>
+            <% }); %>
+        </div>
+        <% } %>
+
+        <div class="row g-3" id="card-grid">
+            <% cards.forEach(card => { %>
+            <div class="col-6 col-md-4 col-lg-3 card-item" data-sport="<%= card.sport_type || '' %>">
+                <a href="/cards/<%= card.id %>" class="text-decoration-none">
+                    <div class="card h-100 hover-shadow">
+                        <% if (card.image_front) { %>
+                        <img src="<%= card.image_front %>" class="card-img-top" alt="<%= card.card_name %>" style="height:160px;object-fit:contain;background:#f8f9fa;">
+                        <% } else { %>
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:160px;">
+                            <i class="bi bi-card-image text-muted" style="font-size:2.5rem;"></i>
+                        </div>
+                        <% } %>
+                        <div class="card-body py-2">
+                            <p class="card-title mb-1 fw-semibold text-dark small"><%= card.card_name %></p>
+                            <p class="text-muted mb-0" style="font-size:0.75rem;"><%= card.set_name || '' %><% if (card.card_number) { %> <span class="fw-semibold">#<%= card.card_number %></span><% } %><% if (card.year) { %> (<%= card.year %>)<% } %></p>
+                            <% if (card.price_nzd) { %><p class="text-primary mb-0 fw-bold" style="font-size:0.85rem;">NZD $<%= parseFloat(card.price_nzd).toFixed(2) %></p><% } %>
+                            <% if (card.quantity > 0) { %><p class="mb-0 mt-1 small"><i class="bi bi-circle-fill text-success" style="font-size:0.5rem;vertical-align:middle;"></i> In stock</p><% } else { %><p class="mb-0 mt-1 small"><i class="bi bi-circle-fill text-danger" style="font-size:0.5rem;vertical-align:middle;"></i> Out of stock</p><% } %>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <% }); %>
+        </div>
+    </section>
+
+    <script>
+    (function () {
+        const pills = document.querySelectorAll('.sport-pill');
+        const items = document.querySelectorAll('.card-item');
+        const countEl = document.getElementById('card-count');
+
+        pills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                pills.forEach(p => { p.classList.remove('active', 'btn-primary'); p.classList.add('btn-outline-primary'); });
+                pill.classList.add('active', 'btn-primary');
+                pill.classList.remove('btn-outline-primary');
+
+                const selected = pill.dataset.sport;
+                let visible = 0;
+                items.forEach(item => {
+                    const match = selected === 'all' || item.dataset.sport === selected;
+                    item.style.display = match ? '' : 'none';
+                    if (match) visible++;
+                });
+                countEl.textContent = `(${visible} result${visible !== 1 ? 's' : ''})`;
+            });
+        });
+    })();
+    </script>
+    <% } %>
+
+    <% if (accessories.length > 0) { %>
+    <section class="mb-5">
+        <h2 class="h5 border-bottom pb-2 mb-3">Accessories <span class="text-muted fw-normal fs-6">(<%= accessories.length %> result<%= accessories.length !== 1 ? 's' : '' %>)</span></h2>
+        <div class="row g-3">
+            <% accessories.forEach(accessory => { %>
+            <div class="col-6 col-md-4 col-lg-3">
+                <a href="/accessories/<%= accessory.id %>" class="text-decoration-none">
+                    <div class="card h-100 hover-shadow">
+                        <% if (accessory.image_url) { %>
+                        <img src="<%= accessory.image_url %>" class="card-img-top" alt="<%= accessory.product_name %>" style="height:160px;object-fit:contain;background:#f8f9fa;">
+                        <% } else { %>
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:160px;">
+                            <i class="bi bi-box-seam text-muted" style="font-size:2.5rem;"></i>
+                        </div>
+                        <% } %>
+                        <div class="card-body py-2">
+                            <p class="card-title mb-1 fw-semibold text-dark small"><%= accessory.product_name %></p>
+                            <p class="text-primary mb-0 fw-bold" style="font-size:0.85rem;">NZD $<%= parseFloat(accessory.price_nzd).toFixed(2) %></p>
+                            <% if (accessory.quantity <= 0) { %><span class="badge bg-secondary" style="font-size:0.65rem;">Out of stock</span><% } %>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <% }); %>
+        </div>
+    </section>
+    <% } %>
+
+    <% if (figurines.length > 0) { %>
+    <section class="mb-5">
+        <h2 class="h5 border-bottom pb-2 mb-3">Figurines <span class="text-muted fw-normal fs-6">(<%= figurines.length %> result<%= figurines.length !== 1 ? 's' : '' %>)</span></h2>
+        <div class="row g-3">
+            <% figurines.forEach(figurine => { %>
+            <div class="col-6 col-md-4 col-lg-3">
+                <a href="/figurines/<%= figurine.id %>" class="text-decoration-none">
+                    <div class="card h-100 hover-shadow">
+                        <% if (figurine.image_url) { %>
+                        <img src="<%= figurine.image_url %>" class="card-img-top" alt="<%= figurine.product_name %>" style="height:160px;object-fit:contain;background:#f8f9fa;">
+                        <% } else { %>
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height:160px;">
+                            <i class="bi bi-trophy text-muted" style="font-size:2.5rem;"></i>
+                        </div>
+                        <% } %>
+                        <div class="card-body py-2">
+                            <p class="card-title mb-1 fw-semibold text-dark small"><%= figurine.product_name %></p>
+                            <p class="text-primary mb-0 fw-bold" style="font-size:0.85rem;">NZD $<%= parseFloat(figurine.price_nzd).toFixed(2) %></p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <% }); %>
+        </div>
+    </section>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

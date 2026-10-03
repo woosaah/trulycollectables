@@ -8,9 +8,10 @@
         </a>
     </div>
 
-    <% if (typeof req !== 'undefined' && req.query.success) { %>
+    <% if (success) { %>
     <div class="alert alert-success alert-dismissible fade show">
-        <i class="bi bi-check-circle"></i> Accessory <%= req.query.success %>!
+        <i class="bi bi-check-circle"></i> Accessory <%= success %>!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     <% } %>
 
@@ -44,8 +45,9 @@
                     <th>Product</th>
                     <th>Category</th>
                     <th>Manufacturer</th>
-                    <th>Price</th>
-                    <th>Qty</th>
+                    <th>Retail</th>
+                    <th>Society</th>
+                    <th>Stock (units)</th>
                     <th>Available</th>
                     <th>Actions</th>
                 </tr>
@@ -56,8 +58,26 @@
                     <td><strong><%= accessory.product_name %></strong></td>
                     <td><%= accessory.category || '-' %></td>
                     <td><%= accessory.manufacturer || '-' %></td>
-                    <td>$<%= accessory.price_nzd.toFixed(2) %></td>
-                    <td><%= accessory.quantity %></td>
+                    <td>$<%= parseFloat(accessory.price_nzd).toFixed(2) %></td>
+                    <td><%= accessory.society_price ? '$' + parseFloat(accessory.society_price).toFixed(2) : '-' %></td>
+                    <td>
+                        <form action="/admin/accessories/<%= accessory.id %>/update-quantity" method="POST" class="d-flex align-items-center gap-1" style="width: 120px;">
+                            <input type="number" class="form-control form-control-sm" name="quantity"
+                                   value="<%= accessory.quantity %>" min="0">
+                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-check"></i></button>
+                        </form>
+                        <%
+                            let variants = accessory.variants;
+                            if (variants && typeof variants === 'string') variants = JSON.parse(variants);
+                        %>
+                        <% if (variants && variants.length > 1) { %>
+                        <small class="text-muted d-block mt-1">
+                            <% variants.forEach(function(v) { %>
+                                <%= v.label %>: <%= Math.floor(accessory.quantity / (v.units_per || 1)) %><%= v !== variants[variants.length-1] ? ' | ' : '' %>
+                            <% }); %>
+                        </small>
+                        <% } %>
+                    </td>
                     <td>
                         <form action="/admin/accessories/<%= accessory.id %>/toggle-availability" method="POST" class="d-inline">
                             <button type="submit" class="btn btn-sm <%= accessory.available ? 'btn-success' : 'btn-secondary' %>">

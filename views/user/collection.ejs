@@ -4,7 +4,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>My Collection</h2>
         <div>
-            <a href="/user/collection/add" class="btn btn-primary">
+            <a href="/user/collection/add?status=<%= status %>" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Add Card
             </a>
             <a href="/user/collection/export?status=<%= status %>" class="btn btn-outline-primary">
@@ -30,9 +30,88 @@
                 Collection Matcher
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/user/collection/sets">
+                <i class="bi bi-grid-3x3-gap"></i> Browse Sets
+            </a>
+        </li>
     </ul>
 
+    <% if (status === 'have' && completionStats && Object.keys(completionStats).length > 0) { %>
+    <% Object.entries(completionStats).forEach(([setName, setData]) => { %>
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong><%= setName %></strong>
+            <span class="text-muted small"><%= setData.have %> / <%= setData.total %> cards &middot; <%= setData.pct %>%</span>
+        </div>
+        <div class="card-body pb-2">
+            <div class="progress mb-3" style="height: 10px;">
+                <div class="progress-bar bg-success" style="width: <%= setData.pct %>%"></div>
+            </div>
+            <div class="row g-2">
+                <% setData.inserts.forEach(insert => { %>
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span class="text-truncate me-2"><%= insert.insert_list %></span>
+                        <span class="text-nowrap"><%= insert.have %>/<%= insert.total %></span>
+                    </div>
+                    <div class="progress" style="height: 5px;">
+                        <div class="progress-bar <%= insert.pct === 100 ? 'bg-success' : 'bg-primary' %>"
+                             style="width: <%= insert.pct %>%"></div>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+    <% }); %>
+    <% } %>
+
+    <% if (figurines && figurines.length > 0) { %>
+    <h5 class="text-muted mb-2"><i class="bi bi-stars"></i> Figurines</h5>
+    <div class="table-responsive mb-4">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Supplier</th>
+                    <th>SKU</th>
+                    <th>Price</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% figurines.forEach(item => { %>
+                <tr>
+                    <td>
+                        <% if (item.image_url) { %>
+                        <img src="<%= item.image_url %>" style="width:32px;height:32px;object-fit:contain;border-radius:4px;" class="me-2">
+                        <% } %>
+                        <a href="/figurines/<%= item.id %>"><strong><%= item.product_name %></strong></a>
+                    </td>
+                    <td><%= item.supplier || '-' %></td>
+                    <td class="text-muted small"><%= item.sku || '-' %></td>
+                    <td>NZD $<%= item.price_nzd ? parseFloat(item.price_nzd).toFixed(2) : '-' %></td>
+                    <td>
+                        <form action="/user/collection/toggle-figurine/<%= item.id %>" method="POST" class="d-inline">
+                            <input type="hidden" name="status" value="<%= status %>">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove from collection"
+                                    onclick="return confirmDelete('Remove this figurine from your collection?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+    <% } %>
+
     <% if (collection && collection.length > 0) { %>
+    <% if (figurines && figurines.length > 0) { %>
+    <h5 class="text-muted mb-2"><i class="bi bi-collection"></i> Cards</h5>
+    <% } %>
     <div class="table-responsive">
         <table class="table table-hover">
             <thead>
@@ -73,10 +152,10 @@
             </tbody>
         </table>
     </div>
-    <% } else { %>
+    <% } else if (!figurines || figurines.length === 0) { %>
     <div class="alert alert-info">
         <i class="bi bi-info-circle"></i> Your <%= status %> list is empty.
-        <a href="/user/collection/add" class="alert-link">Add your first card!</a>
+        <a href="/user/collection/add?status=<%= status %>" class="alert-link">Add your first card!</a>
     </div>
     <% } %>
 </div>

@@ -53,26 +53,38 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Card Name</th>
+                                    <th>Mfg</th>
                                     <th>Set</th>
-                                    <th>Number</th>
+                                    <th>Insert</th>
+                                    <th>#</th>
                                     <th>Year</th>
-                                    <th>Sport/Type</th>
-                                    <th>Condition</th>
-                                    <th>Price NZD</th>
+                                    <th>Cat</th>
+                                    <th>Type</th>
+                                    <th>Cond</th>
+                                    <th>Price</th>
                                     <th>Qty</th>
+                                    <th>Product</th>
+                                    <th>Team</th>
+                                    <th>RC</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <% preview.sampleRows.forEach(row => { %>
                                 <tr>
                                     <td><%= row.card_name %></td>
+                                    <td><%= row.manufacturer || '-' %></td>
                                     <td><%= row.set_name || '-' %></td>
+                                    <td><%= row.insert_list || '-' %></td>
                                     <td><%= row.card_number || '-' %></td>
                                     <td><%= row.year || '-' %></td>
+                                    <td><span class="badge bg-<%= row.card_category === 'sport' ? 'primary' : row.card_category === 'non_sport' ? 'secondary' : 'light text-dark' %>"><%= row.card_category || '-' %></span></td>
                                     <td><%= row.sport_type || '-' %></td>
                                     <td><%= row.condition || '-' %></td>
                                     <td>$<%= row.price_nzd || '0.00' %></td>
                                     <td><%= row.quantity || 1 %></td>
+                                    <td><%= row.product_type || 'single' %></td>
+                                    <td><%= row.team || '-' %></td>
+                                    <td><% if (row.is_rookie_card && ['true','yes','1','y'].includes(String(row.is_rookie_card).toLowerCase())) { %><span class="badge bg-warning text-dark">RC</span><% } %></td>
                                 </tr>
                                 <% }); %>
                             </tbody>

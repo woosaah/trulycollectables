@@ -9,99 +9,281 @@
         </ol>
     </nav>
 
-    <% if (typeof req !== 'undefined' && req.query.success) { %>
+    <% if (success) { %>
     <div class="alert alert-success alert-dismissible fade show">
-        <i class="bi bi-check-circle"></i> Order status updated successfully!
+        <i class="bi bi-check-circle"></i>
+        <% if (success === 'status_updated') { %>
+            Order status updated and customer notified.
+        <% } else if (success === 'tracking_updated') { %>
+            Tracking information saved and customer notified.
+        <% } else if (success === 'notes_updated') { %>
+            Admin notes saved.
+        <% } else { %>
+            Order updated successfully.
+        <% } %>
     </div>
     <% } %>
 
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Order #<%= order.order_number %></h2>
+        <span class="badge badge-<%= order.status %>" style="font-size: 1rem; padding: 8px 16px;"><%= order.status.replace(/_/g, ' ').toUpperCase() %></span>
+    </div>
+
     <div class="row">
         <div class="col-lg-8">
+            <!-- Order Items -->
             <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Items</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Order #<%= order.order_number %></h5>
-                    <p class="text-muted">Placed on <%= new Date(order.created_at).toLocaleString() %></p>
-
-                    <!-- Update Status Form -->
-                    <form action="/admin/orders/<%= order.id %>/status" method="POST" class="mb-4">
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <select class="form-select" name="status" required>
-                                    <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pending</option>
-                                    <option value="processing" <%= order.status === 'processing' ? 'selected' : '' %>>Processing</option>
-                                    <option value="shipped" <%= order.status === 'shipped' ? 'selected' : '' %>>Shipped</option>
-                                    <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>Completed</option>
-                                    <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <button type="submit" class="btn btn-primary w-100">Update Status</button>
-                            </div>
-                        </div>
-                    </form>
-
-                    <h6 class="mt-4 mb-3">Order Items</h6>
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
                                 <tr>
                                     <th>Item</th>
                                     <th>Price</th>
-                                    <th>Quantity</th>
-                                    <th>Total</th>
+                                    <th>Qty</th>
+                                    <th class="text-end">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <% orderItems.forEach(item => { %>
                                 <tr>
                                     <td>
-                                        <%= item.card_name || item.product_name %>
+                                        <%= item.card_name || item.figurine_name || item.accessory_name %>
+                                        <% if (item.variant_label) { %>
+                                        <br><small class="text-muted"><%= item.variant_label %></small>
+                                        <% } %>
                                         <% if (item.set_name) { %>
                                         <br><small class="text-muted"><%= item.set_name %></small>
                                         <% } %>
+                                        <% if (item.accessory_category) { %>
+                                        <br><small class="text-muted"><%= item.accessory_category %></small>
+                                        <% } %>
                                     </td>
-                                    <td>NZD $<%= item.price_nzd.toFixed(2) %></td>
+                                    <td>$<%= parseFloat(item.price_nzd).toFixed(2) %></td>
                                     <td><%= item.quantity %></td>
-                                    <td>NZD $<%= (item.price_nzd * item.quantity).toFixed(2) %></td>
+                                    <td class="text-end">$<%= (parseFloat(item.price_nzd) * item.quantity).toFixed(2) %></td>
                                 </tr>
                                 <% }); %>
                             </tbody>
                             <tfoot>
+                                <% if (parseFloat(order.discount_amount || 0) > 0) { %>
                                 <tr>
-                                    <th colspan="3" class="text-end">Total:</th>
-                                    <th>NZD $<%= order.total_nzd.toFixed(2) %></th>
+                                    <td colspan="3" class="text-end text-muted">Subtotal</td>
+                                    <td class="text-end">$<%= parseFloat(order.subtotal_nzd).toFixed(2) %></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end text-success">Discount</td>
+                                    <td class="text-end text-success">-$<%= parseFloat(order.discount_amount).toFixed(2) %></td>
+                                </tr>
+                                <% } %>
+                                <% if (parseFloat(order.shipping_cost || 0) > 0) { %>
+                                <tr>
+                                    <td colspan="3" class="text-end text-muted">Shipping</td>
+                                    <td class="text-end">$<%= parseFloat(order.shipping_cost).toFixed(2) %></td>
+                                </tr>
+                                <% } %>
+                                <tr>
+                                    <th colspan="3" class="text-end">Total (NZD)</th>
+                                    <th class="text-end">$<%= parseFloat(order.total_nzd).toFixed(2) %></th>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
                 </div>
             </div>
+
+            <!-- Update Status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Update Status</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/admin/orders/<%= order.id %>/status" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <select class="form-select" name="status" required>
+                                    <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pending — Awaiting payment</option>
+                                    <option value="processing" <%= order.status === 'processing' ? 'selected' : '' %>>Processing — Payment received</option>
+                                    <option value="shipped" <%= order.status === 'shipped' ? 'selected' : '' %>>Shipped — On the way</option>
+                                    <option value="ready_for_pickup" <%= order.status === 'ready_for_pickup' ? 'selected' : '' %>>Ready for Pickup</option>
+                                    <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>Completed</option>
+                                    <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">Update & Notify Customer</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tracking Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Shipping & Tracking</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/admin/orders/<%= order.id %>/tracking" method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="shipping_cost" class="form-label">Shipping Cost (NZD)</label>
+                                <input type="number" class="form-control" id="shipping_cost" name="shipping_cost"
+                                       step="0.01" min="0" value="<%= order.shipping_cost || '' %>" placeholder="0.00">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="tracking_number" class="form-label">Tracking Number</label>
+                                <input type="text" class="form-control" id="tracking_number" name="tracking_number"
+                                       value="<%= order.tracking_number || '' %>" placeholder="e.g. NZ1234567890">
+                            </div>
+                            <div class="col-12">
+                                <label for="tracking_url" class="form-label">Tracking URL</label>
+                                <input type="url" class="form-control" id="tracking_url" name="tracking_url"
+                                       value="<%= order.tracking_url || '' %>" placeholder="e.g. https://www.nzpost.co.nz/tools/tracking?id=...">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Save Tracking & Notify Customer</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Admin Notes -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Admin Notes <small class="text-muted">(not visible to customer)</small></h5>
+                </div>
+                <div class="card-body">
+                    <form action="/admin/orders/<%= order.id %>/notes" method="POST">
+                        <div class="mb-3">
+                            <textarea class="form-control" name="admin_notes" rows="3" placeholder="Internal notes about this order..."><%= order.admin_notes || '' %></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary">Save Notes</button>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <div class="col-lg-4">
+            <!-- Customer Info -->
             <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Customer</h6>
+                </div>
                 <div class="card-body">
-                    <h6 class="card-title">Customer Information</h6>
-                    <p class="mb-1"><strong>Name:</strong> <%= order.customer_name %></p>
-                    <p class="mb-0"><strong>Email:</strong> <%= order.customer_email %></p>
+                    <p class="mb-1"><strong><%= order.customer_name %></strong></p>
+                    <p class="mb-1"><a href="mailto:<%= order.customer_email %>"><%= order.customer_email %></a></p>
                 </div>
             </div>
 
+            <!-- Payment & Shipping -->
             <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Payment & Shipping</h6>
+                </div>
                 <div class="card-body">
-                    <h6 class="card-title">Shipping Address</h6>
-                    <p class="mb-0"><%= order.shipping_address %></p>
+                    <p class="mb-1">
+                        <strong>Payment:</strong>
+                        <% if (order.payment_method === 'cash_on_pickup') { %>
+                        <span class="badge bg-warning text-dark"><i class="bi bi-cash"></i> Cash on Pickup</span>
+                        <% } else { %>
+                        <span class="badge bg-info"><i class="bi bi-bank"></i> Bank Transfer</span>
+                        <% } %>
+                    </p>
+                    <p class="mb-1">
+                        <strong>Method:</strong>
+                        <% if (order.shipping_method === 'pickup') { %>
+                        <span class="badge bg-secondary"><i class="bi bi-shop"></i> Local Pickup</span>
+                        <% } else if (shippingRates[order.shipping_method]) { %>
+                        <%= shippingRates[order.shipping_method].label %>
+                        <% } else { %>
+                        TBC
+                        <% } %>
+                    </p>
+                    <% if (order.shipping_address) { %>
+                    <p class="mb-0 mt-2 text-muted small"><%- order.shipping_address.replace(/\n/g, '<br>') %></p>
+                    <% } else { %>
+                    <p class="mb-0 mt-2 text-muted small">No address — local pickup</p>
+                    <% } %>
                 </div>
             </div>
 
+            <!-- Order Notes from Customer -->
             <% if (order.notes) { %>
-            <div class="card">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Customer Notes</h6>
+                </div>
                 <div class="card-body">
-                    <h6 class="card-title">Order Notes</h6>
                     <p class="mb-0"><%= order.notes %></p>
                 </div>
             </div>
             <% } %>
+
+            <!-- Email / Pickup Comms Log -->
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-envelope"></i> Comms Log</h6>
+                </div>
+                <div class="card-body p-2">
+                    <% if (messages && messages.length > 0) { %>
+                    <div class="mb-2" style="max-height:200px;overflow-y:auto;">
+                        <% messages.forEach(function(m) { %>
+                        <div class="d-flex gap-2 mb-2 align-items-start">
+                            <span class="badge mt-1 <%= m.direction === 'in' ? 'bg-success' : 'bg-primary' %>" style="min-width:36px;">
+                                <%= m.direction === 'in' ? '▼ IN' : '▲ OUT' %>
+                            </span>
+                            <div class="small">
+                                <div><%= m.notes %></div>
+                                <div class="text-muted" style="font-size:0.75rem;"><%= new Date(m.created_at).toLocaleString('en-NZ', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) %></div>
+                            </div>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <% } else { %>
+                    <p class="text-muted small mb-2">No messages logged yet.</p>
+                    <% } %>
+                    <form action="/admin/orders/<%= order.id %>/messages" method="POST" class="d-flex gap-1 mt-1">
+                        <select name="direction" class="form-select form-select-sm" style="width:80px;flex-shrink:0;">
+                            <option value="out">▲ Out</option>
+                            <option value="in">▼ In</option>
+                        </select>
+                        <input type="text" name="notes" class="form-control form-control-sm" placeholder="Log email note..." required>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" style="white-space:nowrap;">Log</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tracking Summary -->
+            <% if (order.tracking_number) { %>
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Tracking</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Number:</strong> <%= order.tracking_number %></p>
+                    <% if (order.tracking_url) { %>
+                    <a href="<%= order.tracking_url %>" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-box-arrow-up-right"></i> Track Parcel
+                    </a>
+                    <% } %>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Order Date</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 text-muted"><%= new Date(order.created_at).toLocaleString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

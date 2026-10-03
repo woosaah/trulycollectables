@@ -1,7 +1,7 @@
 /* Truly Collectables Custom Styles */
 
 :root {
-    --primary-color: #6495ED; /* Cornflower Blue */
+    --primary-color: #0000FF; /* Blue */
     --text-color: #000000; /* Black */
     --bg-color: #FFFFFF; /* White */
     --border-color: #dee2e6;
@@ -21,8 +21,8 @@ body {
 }
 
 .btn-primary:hover {
-    background-color: #5080e6;
-    border-color: #5080e6;
+    background-color: #0000CC;
+    border-color: #0000CC;
 }
 
 .text-primary {
@@ -39,7 +39,8 @@ body {
 
 /* Navbar */
 .navbar-brand {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
+    font-family: 'Brush Script MT', 'BrushScript BT', 'Segoe Script', 'Apple Chancery', cursive !important;
 }
 
 .navbar-light .navbar-nav .nav-link {
@@ -58,18 +59,19 @@ body {
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(100, 149, 237, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 255, 0.15);
 }
 
 .card-img-top {
-    height: 250px;
-    object-fit: cover;
+    width: 100%;
+    object-fit: contain;
     background-color: #f8f9fa;
+    padding: 0.5rem;
 }
 
 /* Hero section */
 .hero {
-    background: linear-gradient(135deg, var(--primary-color) 0%, #5080e6 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0000CC 100%);
     color: white;
     padding: 4rem 0;
     margin-bottom: 3rem;
@@ -94,7 +96,7 @@ body {
 /* Forms */
 .form-control:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(100, 149, 237, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(0, 0, 255, 0.25);
 }
 
 /* Alert messages */
@@ -197,6 +199,18 @@ body {
     margin-bottom: 1rem;
 }
 
+/* Tree navigation text overflow */
+.tree-item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tree-item.set {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
 /* Pagination */
 .pagination .page-link {
     color: var(--primary-color);
@@ -224,7 +238,7 @@ body {
 
 /* Dashboard cards */
 .dashboard-card {
-    background: linear-gradient(135deg, var(--primary-color) 0%, #5080e6 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0000CC 100%);
     color: white;
     padding: 2rem;
     border-radius: 0.5rem;
@@ -249,7 +263,7 @@ body {
     }
 
     .card-img-top {
-        height: 200px;
+        max-height: 250px;
     }
 
     .dashboard-card {
@@ -258,6 +272,164 @@ body {
 
     .dashboard-card h3 {
         font-size: 2rem;
+    }
+
+    /* Tree navigation mobile */
+    .tree-navigation {
+        font-size: 0.85rem;
+    }
+
+    .filter-section {
+        padding: 1rem;
+    }
+
+    /* Sticky filter toggle for mobile */
+    .mobile-filter-toggle {
+        position: sticky;
+        top: 60px;
+        z-index: 100;
+        background: white;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Table responsive improvements */
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+
+    /* Smaller buttons on mobile */
+    .btn-sm {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    /* Product price on mobile */
+    .price-tag {
+        font-size: 1.2rem;
+    }
+
+    /* Card title smaller on mobile */
+    .card-title {
+        font-size: 0.95rem;
+    }
+
+    /* Navbar brand smaller */
+    .navbar-brand {
+        font-size: 1.4rem;
+    }
+
+    /* Form controls full width */
+    .form-control, .form-select {
+        font-size: 1rem;
+    }
+
+    /* Admin dashboard buttons */
+    .d-flex.flex-wrap.gap-2 {
+        gap: 0.5rem !important;
+    }
+
+    .d-flex.flex-wrap.gap-2 .btn {
+        font-size: 0.875rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Extra small devices */
+    .product-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero {
+        padding: 2rem 0;
+    }
+
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .container {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    /* Stack filter sidebar on small screens */
+    .filter-section {
+        margin-bottom: 1rem;
+    }
+
+    /* Card images smaller */
+    .card-img-top {
+        max-height: 200px;
+    }
+
+    /* Price smaller */
+    .price-tag {
+        font-size: 1rem;
+    }
+
+    /* Breadcrumb smaller text */
+    .breadcrumb {
+        font-size: 0.85rem;
+    }
+
+    /* Modal full screen on mobile */
+    .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+    }
+
+    .modal-xl {
+        max-width: 100%;
+    }
+
+    /* Product detail image */
+    .product-image-main {
+        max-height: 300px;
+    }
+
+    /* Card detail thumbnails */
+    .img-thumbnail {
+        height: 60px !important;
+    }
+
+    /* Hero buttons full width */
+    .hero .btn-lg {
+        width: 100%;
+    }
+
+    /* Search bar full width */
+    .hero .input-group {
+        width: 100%;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    /* Touch devices - larger tap targets */
+    .btn {
+        min-height: 44px;
+        padding: 0.6rem 1.2rem;
+    }
+
+    .tree-item {
+        padding: 0.6rem;
+        min-height: 44px;
+    }
+
+    .form-control, .form-select {
+        min-height: 44px;
+    }
+
+    .nav-link {
+        padding: 0.75rem 1rem;
+    }
+
+    /* Disable hover effects on touch */
+    .card:hover {
+        transform: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 }
 
@@ -273,3 +445,37 @@ body {
 .hover-shadow:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+/* Accessibility - focus states */
+a:focus, button:focus, .form-control:focus, .form-select:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Improve table readability on mobile */
+@media (max-width: 768px) {
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .table td, .table th {
+        padding: 0.5rem;
+    }
+
+    /* Stack action buttons vertically on mobile */
+    .table .btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Image thumbnails smaller */
+    .table img {
+        max-width: 50px !important;
+        height: 50px !important;
+    }
+}
+
+/* Set list (collection-sets.ejs) */
+.set-list-item { color: inherit; transition: background 0.1s; }
+.set-list-item:hover, .set-list-item:focus { background-color: #f8f9fa; }

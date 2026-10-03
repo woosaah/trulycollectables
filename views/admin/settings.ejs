@@ -1,0 +1,154 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
+            <li class="breadcrumb-item active">Settings</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4">Store Settings</h2>
+
+    <% if (success) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle"></i>
+        <% if (success === 'bank_updated') { %>
+            Bank transfer details saved.
+        <% } else if (success === 'shipping_updated') { %>
+            Shipping rates saved.
+        <% } else { %>
+            Settings updated.
+        <% } %>
+    </div>
+    <% } %>
+
+    <div class="row">
+        <!-- Bank Transfer Details -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bank"></i> Bank Transfer Details</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">These details are shown to customers on the order confirmation page so they can make payment.</p>
+                    <form action="/admin/settings/bank" method="POST">
+                        <div class="mb-3">
+                            <label for="bank_name" class="form-label">Bank Name</label>
+                            <input type="text" class="form-control" id="bank_name" name="bank_name"
+                                   value="<%= settings.bank_name || '' %>" placeholder="e.g. ANZ, ASB, BNZ, Westpac">
+                        </div>
+                        <div class="mb-3">
+                            <label for="bank_account_name" class="form-label">Account Name</label>
+                            <input type="text" class="form-control" id="bank_account_name" name="bank_account_name"
+                                   value="<%= settings.bank_account_name || '' %>" placeholder="e.g. Truly Collectables Ltd">
+                        </div>
+                        <div class="mb-3">
+                            <label for="bank_account_number" class="form-label">Account Number</label>
+                            <input type="text" class="form-control" id="bank_account_number" name="bank_account_number"
+                                   value="<%= settings.bank_account_number || '' %>" placeholder="e.g. 01-0123-0123456-00">
+                        </div>
+                        <div class="mb-3">
+                            <label for="bank_reference_instructions" class="form-label">Reference Instructions</label>
+                            <textarea class="form-control" id="bank_reference_instructions" name="bank_reference_instructions"
+                                      rows="2" placeholder="e.g. Use your order number as reference"><%= settings.bank_reference_instructions || '' %></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Bank Details
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipping Rates -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-truck"></i> Shipping Rates</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Set the price for each bag size. Products are configured with how many fit per bag on their edit pages.</p>
+
+                    <form action="/admin/settings/shipping" method="POST">
+                        <div class="table-responsive mb-3">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Bag Size</th>
+                                        <th>Label</th>
+                                        <th>Price (NZD)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><i class="bi bi-bag"></i> Small</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" name="shipping_small_bag_label"
+                                                   value="<%= settings.shipping_small_bag_label || 'Small Bag' %>">
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" name="shipping_small_bag_price"
+                                                       step="0.01" min="0" value="<%= settings.shipping_small_bag_price || '' %>" placeholder="0.00">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-bag-fill"></i> Medium</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" name="shipping_medium_bag_label"
+                                                   value="<%= settings.shipping_medium_bag_label || 'Medium Bag' %>">
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" name="shipping_medium_bag_price"
+                                                       step="0.01" min="0" value="<%= settings.shipping_medium_bag_price || '' %>" placeholder="0.00">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="bi bi-bag-plus-fill"></i> Large</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" name="shipping_large_bag_label"
+                                                   value="<%= settings.shipping_large_bag_label || 'Large Bag' %>">
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" name="shipping_large_bag_price"
+                                                       step="0.01" min="0" value="<%= settings.shipping_large_bag_price || '' %>" placeholder="0.00">
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h6 class="mt-3">Pickup Option</h6>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="shipping_pickup_available" name="shipping_pickup_available"
+                                   value="true" <%= settings.shipping_pickup_available === 'true' ? 'checked' : '' %>>
+                            <label class="form-check-label" for="shipping_pickup_available">
+                                Offer local pickup (free)
+                            </label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shipping_pickup_instructions" class="form-label">Pickup Instructions</label>
+                            <textarea class="form-control" id="shipping_pickup_instructions" name="shipping_pickup_instructions"
+                                      rows="2" placeholder="e.g. Pickup available from Hamilton, contact to arrange"><%= settings.shipping_pickup_instructions || '' %></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Shipping Rates
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,96 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Players</h2>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/players" method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Search players...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="sport">
+                        <option value="">All Sports</option>
+                        <% sportsList.forEach(sport => { %>
+                        <option value="<%= sport %>" <%= filters.sport === sport ? 'selected' : '' %>><%= sport %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="rep_team">
+                        <option value="">All Teams</option>
+                        <% repTeams.forEach(team => { %>
+                        <option value="<%= team.key %>" <%= filters.rep_team === team.key ? 'selected' : '' %>><%= team.label %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <p class="text-muted"><%= totalPlayers %> player<%= totalPlayers !== 1 ? 's' : '' %></p>
+
+    <% if (players.length > 0) { %>
+    <div class="row g-4">
+        <% players.forEach(player => { %>
+        <div class="col-md-4 col-lg-3">
+            <a href="/players/<%= player.id %>" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <% if (player.image_url) { %>
+                        <img src="<%= player.image_url %>" class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                        <% } else { %>
+                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-person text-muted" style="font-size: 2rem;"></i>
+                        </div>
+                        <% } %>
+                        <h6 class="card-title text-dark"><%= player.name %></h6>
+                        <div class="mb-2">
+                            <% if (player.born_in_nz) { %><span class="badge bg-success">NZ</span><% } %>
+                            <% if (player.sports_played) { %>
+                                <% player.sports_played.forEach(s => { %>
+                                <span class="badge bg-secondary"><%= s %></span>
+                                <% }); %>
+                            <% } %>
+                        </div>
+                        <div>
+                            <% if (player.played_for_all_blacks) { %><span class="badge bg-dark">All Blacks</span><% } %>
+                            <% if (player.played_for_black_caps) { %><span class="badge bg-primary">Black Caps</span><% } %>
+                            <% if (player.played_for_kiwis) { %><span class="badge bg-success">Kiwis</span><% } %>
+                            <% if (player.played_for_white_ferns) { %><span class="badge bg-info">White Ferns</span><% } %>
+                        </div>
+                        <p class="text-muted small mt-2 mb-0"><%= player.card_count %> card<%= player.card_count != 1 ? 's' : '' %></p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <% }); %>
+    </div>
+
+    <% if (totalPages > 1) { %>
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage - 1 %>&search=<%= filters.search || '' %>">Previous</a>
+            </li>
+            <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                <a class="page-link" href="?page=<%= i %>&search=<%= filters.search || '' %>"><%= i %></a>
+            </li>
+            <% } %>
+            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage + 1 %>&search=<%= filters.search || '' %>">Next</a>
+            </li>
+        </ul>
+    </nav>
+    <% } %>
+    <% } else { %>
+    <div class="alert alert-info">No players found.</div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

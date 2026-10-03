@@ -24,8 +24,22 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="cardsDropdown" role="button" data-bs-toggle="dropdown">
+                            Cards
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header">Sport</h6></li>
+                            <li><a class="dropdown-item" href="/sport-cards"><i class="bi bi-trophy"></i> Sport Cards</a></li>
+                            <li><a class="dropdown-item" href="/sport-sets"><i class="bi bi-collection"></i> Sport Sets</a></li>
+                            <li><a class="dropdown-item" href="/boxes-packs"><i class="bi bi-box"></i> Boxes & Packs</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Non-Sport</h6></li>
+                            <li><a class="dropdown-item" href="/non-sport"><i class="bi bi-stars"></i> Non-Sport Cards</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/cards">Browse Cards</a>
+                        <a class="nav-link" href="/players"><i class="bi bi-people"></i> Players</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/accessories">Accessories</a>
@@ -33,17 +47,24 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/figurines">Figurines</a>
                     </li>
-                    <% if (user) { %>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/user/collection">My Collection</a>
-                    </li>
-                    <% } %>
                 </ul>
+                <form class="d-flex mx-3" action="/search" method="GET">
+                    <div class="input-group input-group-sm">
+                        <input class="form-control" type="search" name="q" placeholder="Search cards, accessories..." value="<%= locals.q || '' %>" style="min-width:180px;">
+                        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                    </div>
+                </form>
+
                 <ul class="navbar-nav">
                     <% if (user) { %>
                         <li class="nav-item">
-                            <a class="nav-link" href="/user/cart">
+                            <a class="nav-link position-relative" href="/user/cart">
                                 <i class="bi bi-cart"></i> Cart
+                                <% if (cartCount > 0) { %>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                                    <%= cartCount %>
+                                </span>
+                                <% } %>
                             </a>
                         </li>
                         <li class="nav-item dropdown">
@@ -54,6 +75,7 @@
                                 <li><a class="dropdown-item" href="/user/dashboard">Dashboard</a></li>
                                 <li><a class="dropdown-item" href="/user/orders">Orders</a></li>
                                 <li><a class="dropdown-item" href="/user/collection">Collection</a></li>
+                                <li><a class="dropdown-item" href="/user/collection/sets"><i class="bi bi-grid-3x3-gap me-1"></i> Browse Sets</a></li>
                                 <% if (isAdmin) { %>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger" href="/admin">Admin Panel</a></li>

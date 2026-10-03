@@ -15,66 +15,253 @@
 
     <div class="row">
         <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">Shipping Information</h5>
-                    <form action="/user/checkout" method="POST">
-                        <div class="mb-3">
-                            <label for="customer_name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="customer_name" name="customer_name"
-                                   value="<%= formData.customer_name || '' %>" required>
+            <form action="/user/checkout" method="POST" id="checkoutForm">
+                <!-- Step 1: Shipping Details -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-1-circle"></i> Your Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="customer_name" name="customer_name"
+                                       value="<%= formData.customer_name || '' %>" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="customer_email" name="customer_email"
+                                       value="<%= formData.customer_email || '' %>" required>
+                            </div>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="customer_email" class="form-label">Email Address</label>
-                            <input type="email" class="form-control" id="customer_email" name="customer_email"
-                                   value="<%= formData.customer_email || '' %>" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="shipping_address" class="form-label">Shipping Address</label>
+                        <div class="mb-3" id="shipping-address-block">
+                            <label for="shipping_address" class="form-label">Shipping Address *</label>
                             <textarea class="form-control" id="shipping_address" name="shipping_address"
-                                      rows="4" required><%= formData.shipping_address || '' %></textarea>
+                                      rows="3" required placeholder="Street address, city, postcode"><%= formData.shipping_address || '' %></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Shipping Method -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-2-circle"></i> Shipping Method</h5>
+                    </div>
+                    <div class="card-body">
+                        <% if (hasOversizedItems) { %>
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Your order includes a box or pack.</strong> Physical boxes require own-packaging courier rates — Pass the Parcel charges from $12.33 (same island) for a small box, more for larger items or North Island delivery. The rate below may not cover the actual cost. We'll confirm with you before dispatching.
+                        </div>
+                        <% } %>
+
+                        <% if (shippingRates.small.price > 0) { %>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input shipping-option" type="radio" name="shipping_method" id="shipping_small"
+                                   value="small" data-price="<%= shippingRates.small.price %>"
+                                   <%= formData.shipping_method === 'small' ? 'checked' : '' %>>
+                            <label class="form-check-label d-flex justify-content-between w-100" for="shipping_small">
+                                <span><i class="bi bi-bag"></i> <%= shippingRates.small.label %> <small class="text-muted">— individual cards (Pass the Parcel Small Pack)</small></span>
+                                <strong>$<%= shippingRates.small.price.toFixed(2) %></strong>
+                            </label>
+                        </div>
+                        <% } %>
+
+                        <% if (shippingRates.medium.price > 0) { %>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input shipping-option" type="radio" name="shipping_method" id="shipping_medium"
+                                   value="medium" data-price="<%= shippingRates.medium.price %>"
+                                   <%= formData.shipping_method === 'medium' ? 'checked' : '' %>>
+                            <label class="form-check-label d-flex justify-content-between w-100" for="shipping_medium">
+                                <span><i class="bi bi-bag-fill"></i> <%= shippingRates.medium.label %> <small class="text-muted">— bulk cards, sleeves (Pass the Parcel Medium Pack)</small></span>
+                                <strong>$<%= shippingRates.medium.price.toFixed(2) %></strong>
+                            </label>
+                        </div>
+                        <% } %>
+
+                        <% if (shippingRates.large.price > 0) { %>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input shipping-option" type="radio" name="shipping_method" id="shipping_large"
+                                   value="large" data-price="<%= shippingRates.large.price %>"
+                                   <%= formData.shipping_method === 'large' ? 'checked' : '' %>>
+                            <label class="form-check-label d-flex justify-content-between w-100" for="shipping_large">
+                                <span><i class="bi bi-bag-plus-fill"></i> <%= shippingRates.large.label %> <small class="text-muted">— pages, binders, accessories (Pass the Parcel Large Pack)</small></span>
+                                <strong>$<%= shippingRates.large.price.toFixed(2) %></strong>
+                            </label>
+                        </div>
+                        <% } %>
+
+                        <% if (shippingRates.pickupAvailable) { %>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input shipping-option" type="radio" name="shipping_method" id="shipping_pickup"
+                                   value="pickup" data-price="0"
+                                   <%= formData.shipping_method === 'pickup' ? 'checked' : '' %>>
+                            <label class="form-check-label d-flex justify-content-between w-100" for="shipping_pickup">
+                                <span><i class="bi bi-shop"></i> Local Pickup</span>
+                                <strong>Free</strong>
+                            </label>
+                        </div>
+                        <% if (shippingRates.pickupInstructions) { %>
+                        <div class="text-muted small mt-1 ms-4" id="pickupInstructions" style="display: none;">
+                            <i class="bi bi-info-circle"></i> <%= shippingRates.pickupInstructions %>
+                        </div>
+                        <% } %>
+                        <% } %>
+
+                        <% if (shippingRates.small.price === 0 && shippingRates.medium.price === 0 && shippingRates.large.price === 0 && !shippingRates.pickupAvailable) { %>
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle"></i> Shipping will be calculated after your order is placed. We'll be in touch with the cost.
+                        </div>
+                        <input type="hidden" name="shipping_method" value="tbc">
+                        <% } %>
+
+                        <p class="text-muted small mb-0 mt-3"><i class="bi bi-truck"></i> We ship via <strong>Pass the Parcel</strong> or <strong>NZ Post</strong> depending on your order. Rates are estimates — a rural surcharge of $4.85 may apply, and oversized items may cost more. We'll always confirm with you if the actual cost differs before dispatching.</p>
+                    </div>
+                </div>
+
+                <!-- Step 3: Notes & Payment Info -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-3-circle"></i> Payment</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Payment Method *</label>
+                            <div class="form-check mb-2" id="payment-bank-option">
+                                <input class="form-check-input" type="radio" name="payment_method" id="payment_bank"
+                                       value="bank_transfer" <%= (formData.payment_method || 'bank_transfer') === 'bank_transfer' ? 'checked' : '' %>>
+                                <label class="form-check-label" for="payment_bank">
+                                    <i class="bi bi-bank"></i> <strong>Bank Transfer</strong>
+                                    <div class="text-muted small">You'll receive bank details after placing your order. Items ship once payment is confirmed.</div>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2" id="payment-cash-option" style="display:none;">
+                                <input class="form-check-input" type="radio" name="payment_method" id="payment_cash"
+                                       value="cash_on_pickup" <%= formData.payment_method === 'cash_on_pickup' ? 'checked' : '' %>>
+                                <label class="form-check-label" for="payment_cash">
+                                    <i class="bi bi-cash"></i> <strong>Cash on Pickup</strong>
+                                    <div class="text-muted small">Pay in cash when you collect your order.</div>
+                                </label>
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="notes" class="form-label">Order Notes (Optional)</label>
                             <textarea class="form-control" id="notes" name="notes"
-                                      rows="3" placeholder="Any special instructions..."><%= formData.notes || '' %></textarea>
+                                      rows="2" placeholder="Any special instructions..."><%= formData.notes || '' %></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-lg">Place Order</button>
-                    </form>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-check-circle"></i> Place Order
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
 
         <div class="col-lg-4">
-            <div class="card">
+            <div class="card sticky-top" style="top: 80px;">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Order Summary</h5>
-                    <hr>
                     <% cartItems.forEach(item => { %>
+                    <%
+                        let itemName = item.card_name || item.figurine_name || item.accessory_name;
+                        if (item.variant_label) itemName += ' (' + item.variant_label + ')';
+                        let itemPrice;
+                        if (item.card_id) {
+                            itemPrice = parseFloat(item.card_price);
+                        } else if (item.figurine_id) {
+                            itemPrice = parseFloat(item.figurine_price);
+                        } else if (item.unit_price) {
+                            itemPrice = parseFloat(item.unit_price);
+                        } else {
+                            itemPrice = parseFloat(item.accessory_price);
+                        }
+                    %>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="small">
-                            <%= item.card_name || item.product_name %>
-                            <span class="text-muted">(×<%= item.quantity %>)</span>
+                            <%= itemName %>
+                            <span class="text-muted">(&times;<%= item.quantity %>)</span>
                         </span>
-                        <span class="small">$<%= ((item.card_price || item.figurine_price) * item.quantity).toFixed(2) %></span>
+                        <span class="small">$<%= (itemPrice * item.quantity).toFixed(2) %></span>
                     </div>
                     <% }); %>
                     <hr>
-                    <div class="d-flex justify-content-between">
-                        <strong>Total:</strong>
-                        <strong class="text-primary">NZD $<%= total.toFixed(2) %></strong>
+                    <% if (isSocietyMember) { %>
+                    <div class="mb-2">
+                        <span class="badge bg-success"><i class="bi bi-star-fill"></i> Society Member Pricing</span>
                     </div>
-                    <div class="alert alert-warning mt-3 small">
-                        <i class="bi bi-info-circle"></i> Payment instructions will be sent to your email after placing the order.
+                    <% } %>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal</span>
+                        <span>$<%= total.toFixed(2) %></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2" id="shippingLine">
+                        <span>Shipping</span>
+                        <span id="shippingCost">Select above</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total (NZD)</strong>
+                        <strong class="text-primary" id="orderTotal">$<%= total.toFixed(2) %></strong>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var subtotal = <%= total %>;
+    var shippingOptions = document.querySelectorAll('.shipping-option');
+    var shippingCostEl = document.getElementById('shippingCost');
+    var orderTotalEl = document.getElementById('orderTotal');
+    var pickupInstructions = document.getElementById('pickupInstructions');
+    var addressBlock = document.getElementById('shipping-address-block');
+    var addressField = document.getElementById('shipping_address');
+    var paymentCashOption = document.getElementById('payment-cash-option');
+    var paymentBank = document.getElementById('payment_bank');
+    var paymentCash = document.getElementById('payment_cash');
+
+    function updateTotal() {
+        var checked = document.querySelector('.shipping-option:checked');
+        if (checked) {
+            var isPickup = checked.value === 'pickup';
+            var shippingPrice = parseFloat(checked.dataset.price);
+
+            shippingCostEl.textContent = isPickup ? 'Free' : '$' + shippingPrice.toFixed(2);
+            orderTotalEl.textContent = '$' + (subtotal + shippingPrice).toFixed(2);
+
+            if (pickupInstructions) {
+                pickupInstructions.style.display = isPickup ? 'block' : 'none';
+            }
+
+            if (addressBlock) {
+                addressBlock.style.display = isPickup ? 'none' : '';
+                addressField.required = !isPickup;
+                if (isPickup) addressField.value = '';
+            }
+
+            if (paymentCashOption) {
+                paymentCashOption.style.display = isPickup ? '' : 'none';
+                if (isPickup) {
+                    paymentCash.checked = true;
+                } else {
+                    paymentBank.checked = true;
+                }
+            }
+        }
+    }
+
+    shippingOptions.forEach(function(option) {
+        option.addEventListener('change', updateTotal);
+    });
+
+    updateTotal();
+});
+</script>
 
 <%- include('../partials/footer') %>

@@ -16,9 +16,13 @@ const Order = {
         try {
             await client.query('BEGIN');
 
-            const { customer_name, customer_email, shipping_address, notes, coupon_id, discount_amount } = orderData;
+            const { customer_name, customer_email, shipping_address, notes, coupon_id, discount_amount, shipping_method, shipping_cost, payment_method } = orderData;
 
             // Get cart items
+            // Check if user is a society member for pricing
+            const userResult = await client.query('SELECT is_society_member FROM users WHERE id = $1', [userId]);
+            const isSocietyMember = userResult.rows[0]?.is_society_member || false;
+
             const cartQuery = `
                 SELECT
                     cart.*,
@@ -35,10 +39,17 @@ const Order = {
                 throw new Error('Cart is empty');
             }
 
-            // Calculate total
+            // Calculate total - use unit_price for accessories (already resolved at add-to-cart time)
             let total = 0;
             for (const item of cartResult.rows) {
-                const price = item.card_price || item.figurine_price;
+                let price;
+                if (item.card_price) {
+                    price = item.card_price;
+                } else if (item.figurine_price) {
+                    price = item.figurine_price;
+                } else {
+                    price = item.unit_price;
+                }
                 total += item.quantity * price;
             }
 
@@ -46,48 +57,91 @@ const Order = {
             const orderNumber = this.generateOrderNumber();
             const subtotal = total;
             const finalDiscount = discount_amount || 0;
-            const finalTotal = total - finalDiscount;
+            const finalShipping = parseFloat(shipping_cost) || 0;
+            const finalTotal = total - finalDiscount + finalShipping;
 
             const orderQuery = `
                 INSERT INTO orders (
-                    user_id, order_number, subtotal_nzd, discount_amount, total_nzd,
-                    customer_name, customer_email, shipping_address, notes, coupon_id
+                    user_id, order_number, subtotal_nzd, discount_amount, shipping_cost, shipping_method, total_nzd,
+                    customer_name, customer_email, shipping_address, notes, coupon_id, payment_method
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 RETURNING *
             `;
 
             const orderResult = await client.query(orderQuery, [
-                userId, orderNumber, subtotal, finalDiscount, finalTotal,
-                customer_name, customer_email, shipping_address, notes, coupon_id || null
+                userId, orderNumber, subtotal, finalDiscount, finalShipping, shipping_method || null, finalTotal,
+                customer_name, customer_email, shipping_address, notes, coupon_id || null,
+                payment_method || 'bank_transfer'
             ]);
 
             const order = orderResult.rows[0];
 
             // Create order items
             for (const item of cartResult.rows) {
-                const price = item.card_price || item.figurine_price;
+                let price;
+                if (item.card_price) {
+                    price = item.card_price;
+                } else if (item.figurine_price) {
+                    price = item.figurine_price;
+                } else {
+                    price = item.unit_price;
+                }
+
                 const itemQuery = `
                     INSERT INTO order_items (
-                        order_id, card_id, figurine_id, quantity, price_nzd
+                        order_id, card_id, figurine_id, accessory_id, variant_label, quantity, price_nzd
                     )
-                    VALUES ($1, $2, $3, $4, $5)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                 `;
                 await client.query(itemQuery, [
-                    order.id, item.card_id, item.figurine_id, item.quantity, price
+                    order.id, item.card_id, item.figurine_id, item.accessory_id, item.variant_label || null, item.quantity, price
                 ]);
 
-                // Update inventory
+                // Update inventory - reject the whole order if stock is insufficient
                 if (item.card_id) {
-                    await client.query(
-                        'UPDATE cards SET quantity = quantity - $1 WHERE id = $2',
+                    const stockUpdate = await client.query(
+                        'UPDATE cards SET quantity = quantity - $1 WHERE id = $2 AND quantity >= $1 RETURNING quantity',
                         [item.quantity, item.card_id]
                     );
+                    if (stockUpdate.rowCount === 0) {
+                        throw new Error(`Insufficient stock for card ${item.card_id}`);
+                    }
                 } else if (item.figurine_id) {
-                    await client.query(
-                        'UPDATE figurines SET quantity = quantity - $1 WHERE id = $2',
+                    const stockUpdate = await client.query(
+                        'UPDATE figurines SET quantity = quantity - $1 WHERE id = $2 AND quantity >= $1 RETURNING quantity',
                         [item.quantity, item.figurine_id]
                     );
+                    if (stockUpdate.rowCount === 0) {
+                        throw new Error(`Insufficient stock for figurine ${item.figurine_id}`);
+                    }
+                } else if (item.accessory_id) {
+                    // For variant items, deduct units_per * quantity from stock
+                    if (item.variant_label) {
+                        const accResult = await client.query('SELECT variants FROM accessories WHERE id = $1', [item.accessory_id]);
+                        if (accResult.rows[0] && accResult.rows[0].variants) {
+                            let variants = typeof accResult.rows[0].variants === 'string'
+                                ? JSON.parse(accResult.rows[0].variants) : accResult.rows[0].variants;
+                            const variant = variants.find(v => v.label === item.variant_label);
+                            const unitsPer = variant ? (variant.units_per || 1) : 1;
+                            const unitsToDeduct = item.quantity * unitsPer;
+                            const stockUpdate = await client.query(
+                                'UPDATE accessories SET quantity = quantity - $1 WHERE id = $2 AND quantity >= $1 RETURNING quantity',
+                                [unitsToDeduct, item.accessory_id]
+                            );
+                            if (stockUpdate.rowCount === 0) {
+                                throw new Error(`Insufficient stock for accessory ${item.accessory_id}`);
+                            }
+                        }
+                    } else {
+                        const stockUpdate = await client.query(
+                            'UPDATE accessories SET quantity = quantity - $1 WHERE id = $2 AND quantity >= $1 RETURNING quantity',
+                            [item.quantity, item.accessory_id]
+                        );
+                        if (stockUpdate.rowCount === 0) {
+                            throw new Error(`Insufficient stock for accessory ${item.accessory_id}`);
+                        }
+                    }
                 }
             }
 
@@ -139,11 +193,15 @@ const Order = {
                 cards.card_name,
                 cards.set_name,
                 cards.image_front,
-                figurines.product_name,
-                figurines.image_url
+                figurines.product_name as figurine_name,
+                figurines.image_url as figurine_image,
+                accessories.product_name as accessory_name,
+                accessories.image_url as accessory_image,
+                accessories.category as accessory_category
             FROM order_items
             LEFT JOIN cards ON order_items.card_id = cards.id
             LEFT JOIN figurines ON order_items.figurine_id = figurines.id
+            LEFT JOIN accessories ON order_items.accessory_id = accessories.id
             WHERE order_items.order_id = $1
         `;
         const result = await pool.query(query, [orderId]);

@@ -21,6 +21,9 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) DEFAULT 'customer', -- 'customer', 'admin'
+    is_society_member BOOLEAN DEFAULT false,
+    api_enabled BOOLEAN DEFAULT false,
+    api_key VARCHAR(64) UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -89,6 +92,35 @@ CREATE TABLE card_images (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- CSV Imports tracking table
+CREATE TABLE csv_imports (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    filename VARCHAR(255) NOT NULL,
+    total_rows INTEGER DEFAULT 0,
+    processed_rows INTEGER DEFAULT 0,
+    successful_rows INTEGER DEFAULT 0,
+    failed_rows INTEGER DEFAULT 0,
+    duplicates_skipped INTEGER DEFAULT 0,
+    status VARCHAR(50) DEFAULT 'pending',
+    error_log JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP
+);
+
+-- Sets table with image support
+CREATE TABLE sets (
+    id SERIAL PRIMARY KEY,
+    set_name VARCHAR(255) NOT NULL UNIQUE,
+    manufacturer VARCHAR(100),
+    year INTEGER,
+    sport_type VARCHAR(50),
+    card_category VARCHAR(20), -- 'sport' or 'non_sport'
+    description TEXT,
+    image_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Accessories table (pages, albums, sleeves, protectors, etc.)
 CREATE TABLE accessories (
     id SERIAL PRIMARY KEY,
@@ -96,9 +128,13 @@ CREATE TABLE accessories (
     category VARCHAR(100), -- 'Pages', 'Albums', 'Sleeves', 'Protectors', 'Boxes', 'Binders', etc.
     description TEXT,
     price_nzd DECIMAL(10,2),
+    society_price DECIMAL(10,2),
     quantity INTEGER DEFAULT 1,
     image_url TEXT,
     manufacturer VARCHAR(100),
+    small_bag_qty INTEGER, -- how many fit in a small bag
+    medium_bag_qty INTEGER, -- how many fit in a medium bag
+    large_bag_qty INTEGER, -- how many fit in a large bag
     available BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -113,6 +149,9 @@ CREATE TABLE figurines (
     quantity INTEGER DEFAULT 1,
     image_url TEXT,
     supplier VARCHAR(255),
+    small_bag_qty INTEGER, -- how many fit in a small bag
+    medium_bag_qty INTEGER, -- how many fit in a medium bag
+    large_bag_qty INTEGER, -- how many fit in a large bag
     approved BOOLEAN DEFAULT false,
     available BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -141,11 +180,13 @@ CREATE TABLE cart (
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     card_id INTEGER REFERENCES cards(id) ON DELETE CASCADE,
     figurine_id INTEGER REFERENCES figurines(id) ON DELETE CASCADE,
+    accessory_id INTEGER REFERENCES accessories(id) ON DELETE CASCADE,
     quantity INTEGER DEFAULT 1,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT one_product_type CHECK (
-        (card_id IS NOT NULL AND figurine_id IS NULL) OR
-        (card_id IS NULL AND figurine_id IS NOT NULL)
+        (card_id IS NOT NULL AND figurine_id IS NULL AND accessory_id IS NULL) OR
+        (card_id IS NULL AND figurine_id IS NOT NULL AND accessory_id IS NULL) OR
+        (card_id IS NULL AND figurine_id IS NULL AND accessory_id IS NOT NULL)
     )
 );
 
@@ -169,11 +210,13 @@ CREATE TABLE order_items (
     order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
     card_id INTEGER REFERENCES cards(id),
     figurine_id INTEGER REFERENCES figurines(id),
+    accessory_id INTEGER REFERENCES accessories(id),
     quantity INTEGER NOT NULL,
     price_nzd DECIMAL(10,2) NOT NULL,
-    CONSTRAINT one_product_type CHECK (
-        (card_id IS NOT NULL AND figurine_id IS NULL) OR
-        (card_id IS NULL AND figurine_id IS NOT NULL)
+    CONSTRAINT order_items_one_product_type CHECK (
+        (card_id IS NOT NULL AND figurine_id IS NULL AND accessory_id IS NULL) OR
+        (card_id IS NULL AND figurine_id IS NOT NULL AND accessory_id IS NULL) OR
+        (card_id IS NULL AND figurine_id IS NULL AND accessory_id IS NOT NULL)
     )
 );
 
@@ -201,9 +244,11 @@ CREATE INDEX idx_user_collections_user_id ON user_collections(user_id);
 CREATE INDEX idx_user_collections_status ON user_collections(status);
 CREATE INDEX idx_user_collections_manufacturer ON user_collections(manufacturer);
 CREATE INDEX idx_cart_user_id ON cart(user_id);
+CREATE INDEX idx_cart_accessory_id ON cart(accessory_id);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_order_items_accessory_id ON order_items(accessory_id);
 CREATE INDEX idx_sport_types_name ON sport_types(name);
 
 -- Insert initial sport types

@@ -1,0 +1,294 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Edit Set</h2>
+
+    <% if (errors && errors.length > 0) { %>
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            <% errors.forEach(error => { %>
+            <li><%= error.msg %></li>
+            <% }); %>
+        </ul>
+    </div>
+    <% } %>
+
+    <div class="card">
+        <div class="card-body">
+            <form action="/admin/sets/<%= set.id %>/edit" method="POST">
+                <div class="mb-3">
+                    <label for="set_name" class="form-label">Set Name *</label>
+                    <input type="text" class="form-control" id="set_name" name="set_name" value="<%= set.set_name %>" required>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="manufacturer" class="form-label">Manufacturer</label>
+                        <select class="form-select" id="manufacturer" name="manufacturer">
+                            <option value="">Select or type new...</option>
+                            <% manufacturers.forEach(mfg => { %>
+                            <option value="<%= mfg %>" <%= set.manufacturer === mfg ? 'selected' : '' %>><%= mfg %></option>
+                            <% }); %>
+                        </select>
+                        <input type="text" class="form-control mt-2" id="manufacturer_custom" placeholder="Or type new manufacturer...">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="year" class="form-label">Year</label>
+                        <input type="number" class="form-control" id="year" name="year" value="<%= set.year || '' %>" min="1800" max="2100">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="sport_type" class="form-label">Type</label>
+                        <select class="form-select" id="sport_type" name="sport_type">
+                            <option value="">Select or type new...</option>
+                            <% sportTypes.forEach(type => { %>
+                            <option value="<%= type %>" <%= set.sport_type === type ? 'selected' : '' %>><%= type %></option>
+                            <% }); %>
+                        </select>
+                        <input type="text" class="form-control mt-2" id="sport_type_custom" placeholder="Or type new type...">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="card_category" class="form-label">Category</label>
+                        <select class="form-select" id="card_category" name="card_category">
+                            <option value="">Select category...</option>
+                            <option value="sport" <%= set.card_category === 'sport' ? 'selected' : '' %>>Sport</option>
+                            <option value="non_sport" <%= set.card_category === 'non_sport' ? 'selected' : '' %>>Non-Sport</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="card_subtype" class="form-label">Card Type</label>
+                        <select class="form-select" id="card_subtype" name="card_subtype">
+                            <option value="">Select or type new...</option>
+                            <% cardSubtypes.forEach(sub => { %>
+                            <option value="<%= sub %>" <%= set.card_subtype === sub ? 'selected' : '' %>><%= sub %></option>
+                            <% }); %>
+                        </select>
+                        <input type="text" class="form-control mt-2" id="card_subtype_custom" placeholder="Or type new card type...">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="image_url" class="form-label">Image URL</label>
+                    <input type="text" class="form-control" id="image_url" name="image_url" value="<%= set.image_url || '' %>" placeholder="https://...">
+                    <small class="text-muted">Enter a URL to an image representing this set</small>
+                    <% if (set.image_url) { %>
+                    <div class="mt-2">
+                        <img src="<%= set.image_url %>" alt="Set image" style="max-width: 200px;">
+                    </div>
+                    <% } %>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"><%= set.description || '' %></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Update Set</button>
+                    <a href="/admin/sets" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <% const totalCards = [...baseSections, ...specialSections].reduce((s, r) => s + parseInt(r.card_count), 0); %>
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Cards in this Set <span class="text-muted fw-normal fs-6">(<%= totalCards %> total)</span></h5>
+            <a href="/admin/cards?search=<%= encodeURIComponent(set.set_name) %>" class="btn btn-sm btn-outline-secondary">View all cards</a>
+        </div>
+        <% if (totalCards === 0) { %>
+        <div class="card-body text-muted">No cards in this set yet.</div>
+        <% } else { %>
+        <div class="card-body p-0">
+            <% if (baseSections.length > 0) { %>
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3" colspan="2">Base Set <small class="text-muted fw-normal">(numbered cards)</small></th>
+                        <th class="text-end pe-3"><%= baseSections.reduce((s, r) => s + parseInt(r.card_count), 0) %></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% baseSections.forEach(s => { %>
+                    <tr>
+                        <td class="ps-3" style="width:1rem;"></td>
+                        <td class="text-muted small"><%= s.section %></td>
+                        <td class="text-end pe-3 small"><%= s.card_count %></td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+            <% } %>
+            <% if (specialSections.length > 0) { %>
+            <table class="table table-sm mb-0 <% if (baseSections.length > 0) { %>border-top<% } %>">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3" colspan="2">Specials &amp; Inserts <small class="text-muted fw-normal">(non-numeric numbering)</small></th>
+                        <th class="text-end pe-3"><%= specialSections.reduce((s, r) => s + parseInt(r.card_count), 0) %></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% specialSections.forEach(s => { %>
+                    <tr>
+                        <td class="ps-3" style="width:1rem;"></td>
+                        <td class="small"><%= s.section %></td>
+                        <td class="text-end pe-3 small"><%= s.card_count %></td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+            <% } %>
+        </div>
+        <% } %>
+    </div>
+
+    <% if (success === 'parallel_added') { %>
+    <div class="alert alert-success mt-3">Parallel added and applied to all matching cards in this set.</div>
+    <% } else if (success === 'parallel_deleted') { %>
+    <div class="alert alert-success mt-3">Parallel deleted.</div>
+    <% } %>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Parallels / Variations</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">Define the parallel versions for cards in this set (e.g. Rainbow, Pink Foil, Silver). When you add a parallel here, it's automatically applied to all existing cards in the set.</p>
+
+            <% if (parallels && parallels.length > 0) { %>
+            <table class="table table-sm mb-4">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Default Price</th>
+                        <th>Applies To</th>
+                        <th>Sort</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% parallels.forEach(p => { %>
+                    <tr>
+                        <td><%= p.variation_name %></td>
+                        <td>NZD $<%= parseFloat(p.default_price).toFixed(2) %></td>
+                        <td><span class="badge bg-secondary"><%= p.applies_to === 'all' ? 'All cards' : 'Base only' %></span></td>
+                        <td><%= p.sort_order %></td>
+                        <td>
+                            <form action="/admin/sets/<%= set.id %>/parallels/<%= p.id %>/delete" method="POST" class="d-inline" onsubmit="return confirm('Delete this parallel? This will NOT remove existing card variations.')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+            <% } else { %>
+            <p class="text-muted small">No parallels defined yet.</p>
+            <% } %>
+
+            <h6>Add Parallel</h6>
+            <form action="/admin/sets/<%= set.id %>/parallels/add" method="POST" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Name *</label>
+                    <input type="text" class="form-control form-control-sm" name="variation_name" placeholder="e.g. Rainbow" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Default Price (NZD)</label>
+                    <input type="number" class="form-control form-control-sm" name="default_price" step="0.01" min="0" value="0">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Applies To</label>
+                    <select class="form-select form-select-sm" name="applies_to">
+                        <option value="base">Base cards only (numeric #)</option>
+                        <option value="all">All cards (including inserts)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Sort Order</label>
+                    <input type="number" class="form-control form-control-sm" name="sort_order" value="0">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Add Parallel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('manufacturer_custom').addEventListener('input', function() {
+    if (this.value) {
+        document.getElementById('manufacturer').value = '';
+    }
+});
+
+document.getElementById('manufacturer').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('manufacturer_custom').value = '';
+    }
+});
+
+document.getElementById('sport_type_custom').addEventListener('input', function() {
+    if (this.value) {
+        document.getElementById('sport_type').value = '';
+    }
+});
+
+document.getElementById('sport_type').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('sport_type_custom').value = '';
+    }
+});
+
+document.getElementById('card_subtype_custom').addEventListener('input', function() {
+    if (this.value) {
+        document.getElementById('card_subtype').value = '';
+    }
+});
+
+document.getElementById('card_subtype').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('card_subtype_custom').value = '';
+    }
+});
+
+document.querySelector('form').addEventListener('submit', function() {
+    var mfgSelect = document.getElementById('manufacturer');
+    var customMfg = document.getElementById('manufacturer_custom').value.trim();
+    if (customMfg) {
+        var opt = document.createElement('option');
+        opt.value = customMfg;
+        opt.text = customMfg;
+        opt.selected = true;
+        mfgSelect.appendChild(opt);
+    }
+    var typeSelect = document.getElementById('sport_type');
+    var customType = document.getElementById('sport_type_custom').value.trim();
+    if (customType) {
+        var opt2 = document.createElement('option');
+        opt2.value = customType;
+        opt2.text = customType;
+        opt2.selected = true;
+        typeSelect.appendChild(opt2);
+    }
+    var subtypeSelect = document.getElementById('card_subtype');
+    var customSubtype = document.getElementById('card_subtype_custom').value.trim();
+    if (customSubtype) {
+        var opt3 = document.createElement('option');
+        opt3.value = customSubtype;
+        opt3.text = customSubtype;
+        opt3.selected = true;
+        subtypeSelect.appendChild(opt3);
+    }
+});
+</script>
+
+<%- include('../partials/footer') %>

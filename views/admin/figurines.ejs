@@ -3,9 +3,10 @@
 <div class="container my-4">
     <h2 class="mb-4">Manage Figurines</h2>
 
-    <% if (typeof req !== 'undefined' && req.query.success) { %>
+    <% if (success) { %>
     <div class="alert alert-success alert-dismissible fade show">
-        <i class="bi bi-check-circle"></i> Figurine <%= req.query.success %>!
+        <i class="bi bi-check-circle"></i> Figurine <%= success %>!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     <% } %>
 
@@ -22,7 +23,6 @@
                         <tr>
                             <th>Product</th>
                             <th>Supplier</th>
-                            <th>Price AUD</th>
                             <th>Price NZD</th>
                             <th>Qty</th>
                             <th>Actions</th>
@@ -33,9 +33,14 @@
                         <tr>
                             <td><strong><%= figurine.product_name %></strong></td>
                             <td><%= figurine.supplier || '-' %></td>
-                            <td>$<%= figurine.price_aud ? figurine.price_aud.toFixed(2) : '-' %></td>
-                            <td>$<%= figurine.price_nzd.toFixed(2) %></td>
-                            <td><%= figurine.quantity %></td>
+                            <td>$<%= parseFloat(figurine.price_nzd).toFixed(2) %></td>
+                            <td>
+                                <form action="/admin/figurines/<%= figurine.id %>/update-quantity" method="POST" class="d-flex align-items-center gap-1" style="width: 120px;">
+                                    <input type="number" class="form-control form-control-sm qty-input" name="quantity"
+                                           value="<%= figurine.quantity %>" min="0">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-check"></i></button>
+                                </form>
+                            </td>
                             <td>
                                 <form action="/admin/figurines/<%= figurine.id %>/approve" method="POST" class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-success">Approve</button>
@@ -67,7 +72,6 @@
                         <tr>
                             <th>Product</th>
                             <th>Supplier</th>
-                            <th>Price AUD</th>
                             <th>Price NZD</th>
                             <th>Qty</th>
                             <th>Available</th>
@@ -79,15 +83,21 @@
                         <tr>
                             <td><strong><%= figurine.product_name %></strong></td>
                             <td><%= figurine.supplier || '-' %></td>
-                            <td>$<%= figurine.price_aud ? figurine.price_aud.toFixed(2) : '-' %></td>
-                            <td>$<%= figurine.price_nzd.toFixed(2) %></td>
-                            <td><%= figurine.quantity %></td>
+                            <td>$<%= parseFloat(figurine.price_nzd).toFixed(2) %></td>
+                            <td>
+                                <form action="/admin/figurines/<%= figurine.id %>/update-quantity" method="POST" class="d-flex align-items-center gap-1" style="width: 120px;">
+                                    <input type="number" class="form-control form-control-sm qty-input" name="quantity"
+                                           value="<%= figurine.quantity %>" min="0">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-check"></i></button>
+                                </form>
+                            </td>
                             <td>
                                 <span class="badge <%= figurine.available ? 'bg-success' : 'bg-secondary' %>">
                                     <%= figurine.available ? 'Yes' : 'No' %>
                                 </span>
                             </td>
                             <td>
+                                <a href="/admin/figurines/<%= figurine.id %>/edit" class="btn btn-sm btn-outline-primary">Edit</a>
                                 <form action="/admin/figurines/<%= figurine.id %>/delete" method="POST" class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-danger"
                                             onclick="return confirmDelete('Delete this figurine?')">Delete</button>

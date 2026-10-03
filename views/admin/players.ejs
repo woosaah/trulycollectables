@@ -1,0 +1,153 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Players</h2>
+        <div>
+            <a href="/admin/players/import" class="btn btn-success me-2">
+                <i class="bi bi-upload"></i> Import Players
+            </a>
+            <a href="/admin/players/match" class="btn btn-info me-2">
+                <i class="bi bi-link-45deg"></i> Match to Cards
+            </a>
+            <a href="/admin/players/add" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Player
+            </a>
+        </div>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        Player action completed successfully.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <% } %>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/admin/players" method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Search players...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="sport">
+                        <option value="">All Sports</option>
+                        <% sportsList.forEach(sport => { %>
+                        <option value="<%= sport %>" <%= filters.sport === sport ? 'selected' : '' %>><%= sport %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="rep_team">
+                        <option value="">All Teams</option>
+                        <% repTeams.forEach(team => { %>
+                        <option value="<%= team.key %>" <%= filters.rep_team === team.key ? 'selected' : '' %>><%= team.label %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="born_in_nz">
+                        <option value="">All Origins</option>
+                        <option value="true" <%= filters.born_in_nz === 'true' ? 'selected' : '' %>>Born in NZ</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <p class="text-muted"><%= totalPlayers %> player<%= totalPlayers !== 1 ? 's' : '' %> found</p>
+
+    <% if (players && players.length > 0) { %>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>NZ</th>
+                    <th>Sports</th>
+                    <th>Representative Teams</th>
+                    <th>Cards</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% players.forEach(player => { %>
+                <tr style="cursor: pointer;" data-href="/admin/players/<%= player.id %>/edit">
+                    <td><strong><%= player.name %></strong></td>
+                    <td>
+                        <% if (player.born_in_nz) { %>
+                        <span class="badge bg-success">NZ</span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <% if (player.sports_played && player.sports_played.length > 0) { %>
+                            <% player.sports_played.forEach(sport => { %>
+                            <span class="badge bg-secondary"><%= sport %></span>
+                            <% }); %>
+                        <% } %>
+                    </td>
+                    <td>
+                        <% if (player.played_for_all_blacks) { %><span class="badge bg-dark">All Blacks</span><% } %>
+                        <% if (player.played_for_maori) { %><span class="badge bg-dark">Maori AB</span><% } %>
+                        <% if (player.played_for_kiwis) { %><span class="badge bg-success">Kiwis</span><% } %>
+                        <% if (player.played_for_maori_rl) { %><span class="badge bg-success">Maori RL</span><% } %>
+                        <% if (player.played_for_black_caps) { %><span class="badge bg-primary">Black Caps</span><% } %>
+                        <% if (player.played_for_white_ferns) { %><span class="badge bg-info">White Ferns</span><% } %>
+                        <% if (player.played_for_tall_blacks) { %><span class="badge bg-warning text-dark">Tall Blacks</span><% } %>
+                        <% if (player.played_for_other) { %><span class="badge bg-secondary">Other</span><% } %>
+                    </td>
+                    <td><span class="badge bg-primary"><%= player.card_count %></span></td>
+                    <td>
+                        <a href="/admin/players/<%= player.id %>/edit" class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="/admin/players/<%= player.id %>/delete" method="POST" style="display: inline;" onsubmit="return confirm('Delete this player?');">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+    <% if (totalPages > 1) { %>
+    <nav>
+        <ul class="pagination justify-content-center">
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage - 1 %>&search=<%= filters.search || '' %>">Previous</a>
+            </li>
+            <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                <a class="page-link" href="?page=<%= i %>&search=<%= filters.search || '' %>"><%= i %></a>
+            </li>
+            <% } %>
+            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= currentPage + 1 %>&search=<%= filters.search || '' %>">Next</a>
+            </li>
+        </ul>
+    </nav>
+    <% } %>
+    <% } else { %>
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No players found. <a href="/admin/players/add">Add one</a> or <a href="/admin/players/import">import from CSV</a>.
+    </div>
+    <% } %>
+</div>
+
+<script>
+document.querySelectorAll('tr[data-href]').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+        if (e.target.closest('a, button, form')) return;
+        window.location.href = this.dataset.href;
+    });
+});
+</script>
+
+<%- include('../partials/footer') %>

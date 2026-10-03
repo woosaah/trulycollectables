@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { redirectIfAuthenticated } = require('../middleware/auth');
+const { createAccountLimiter, isBlockedEmailDomain } = require('../middleware/security');
 
 // Register page
 router.get('/register', redirectIfAuthenticated, (req, res) => {
@@ -14,7 +15,7 @@ router.get('/register', redirectIfAuthenticated, (req, res) => {
 });
 
 // Register handler
-router.post('/register', [
+router.post('/register', createAccountLimiter, [
     body('username')
         .trim()
         .isLength({ min: 3, max: 50 })
@@ -40,6 +41,14 @@ router.post('/register', [
         return res.render('public/register', {
             title: 'Register',
             errors: errors.array(),
+            formData: { username, email }
+        });
+    }
+
+    if (isBlockedEmailDomain(email)) {
+        return res.render('public/register', {
+            title: 'Register',
+            errors: [{ msg: 'Please use a permanent email address to register' }],
             formData: { username, email }
         });
     }
@@ -73,7 +82,8 @@ router.post('/register', [
             id: user.id,
             username: user.username,
             email: user.email,
-            role: user.role
+            role: user.role,
+            is_society_member: user.is_society_member || false
         };
 
         res.redirect('/user/dashboard');
@@ -113,6 +123,14 @@ router.post('/login', [
         });
     }
 
+    if (isBlockedEmailDomain(email)) {
+        return res.render('public/login', {
+            title: 'Login',
+            errors: [{ msg: 'Invalid email or password' }],
+            redirect
+        });
+    }
+
     try {
         const user = await User.findByEmail(email);
 
@@ -139,7 +157,8 @@ router.post('/login', [
             id: user.id,
             username: user.username,
             email: user.email,
-            role: user.role
+            role: user.role,
+            is_society_member: user.is_society_member || false
         };
 
         res.redirect(redirect);

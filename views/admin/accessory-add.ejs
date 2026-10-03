@@ -47,13 +47,20 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="price_nzd" class="form-label">Price (NZD) *</label>
+                            <div class="col-md-4 mb-3">
+                                <label for="price_nzd" class="form-label">Retail Price (NZD) *</label>
                                 <input type="number" class="form-control" id="price_nzd" name="price_nzd"
                                        step="0.01" min="0" required>
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
+                                <label for="society_price" class="form-label">Society Price (NZD)</label>
+                                <input type="number" class="form-control" id="society_price" name="society_price"
+                                       step="0.01" min="0" placeholder="Auto: 10% off retail">
+                                <small class="text-muted">Leave blank for 10% off retail</small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
                                 <label for="quantity" class="form-label">Quantity *</label>
                                 <input type="number" class="form-control" id="quantity" name="quantity"
                                        min="0" value="1" required>

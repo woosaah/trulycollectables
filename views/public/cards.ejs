@@ -1,11 +1,116 @@
 <%- include('../partials/header') %>
 
 <div class="container my-4">
+    <!-- Mobile filter toggle button -->
+    <div class="d-lg-none mb-3">
+        <button class="btn btn-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#mobileFilters">
+            <i class="bi bi-funnel"></i> Show Filters & Navigation
+        </button>
+    </div>
+
     <div class="row">
-        <!-- Filters Sidebar -->
+        <!-- Tree Navigation Sidebar -->
         <div class="col-lg-3 mb-4">
+            <div class="collapse d-lg-block" id="mobileFilters">
+                <!-- Tree Navigation -->
+                <div class="filter-section mb-4">
+                    <h5 class="mb-3">Browse by Collection</h5>
+                    <div class="tree-navigation">
+                    <!-- Sport Cards -->
+                    <% if (navigationTree.sport && Object.keys(navigationTree.sport).length > 0) { %>
+                    <div class="tree-level-1">
+                        <div class="tree-item category">
+                            <i class="bi bi-chevron-right tree-toggle"></i>
+                            <strong>Sport Cards</strong>
+                        </div>
+                        <div class="tree-children" style="display: none;">
+                            <% Object.keys(navigationTree.sport).sort().forEach(sportType => { %>
+                                <div class="tree-level-2">
+                                    <div class="tree-item sport-type">
+                                        <i class="bi bi-chevron-right tree-toggle"></i>
+                                        <strong><%= sportType %></strong>
+                                    </div>
+                                    <div class="tree-children" style="display: none;">
+                                        <% Object.keys(navigationTree.sport[sportType]).sort().forEach(manufacturer => { %>
+                                            <div class="tree-level-3">
+                                                <div class="tree-item manufacturer">
+                                                    <i class="bi bi-chevron-right tree-toggle"></i>
+                                                    <%= manufacturer %>
+                                                </div>
+                                                <div class="tree-children" style="display: none;">
+                                                    <% Object.keys(navigationTree.sport[sportType][manufacturer]).sort((a,b) => b - a).forEach(year => { %>
+                                                        <div class="tree-level-4">
+                                                            <div class="tree-item year">
+                                                                <i class="bi bi-chevron-right tree-toggle"></i>
+                                                                <%= year %>
+                                                            </div>
+                                                            <div class="tree-children" style="display: none;">
+                                                                <% navigationTree.sport[sportType][manufacturer][year].forEach(set => { %>
+                                                                    <div class="tree-level-5">
+                                                                        <a href="?sport_type=<%= encodeURIComponent(sportType) %>&manufacturer=<%= encodeURIComponent(manufacturer) %>&year=<%= year !== 'No Year' ? year : '' %>&set_name=<%= encodeURIComponent(set.name) %>"
+                                                                           class="tree-item set <%= filters.set_name === set.name ? 'active' : '' %>">
+                                                                            <%= set.name %> (<%= set.count %>)
+                                                                        </a>
+                                                                    </div>
+                                                                <% }); %>
+                                                            </div>
+                                                        </div>
+                                                    <% }); %>
+                                                </div>
+                                            </div>
+                                        <% }); %>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                    <% } %>
+
+                    <!-- Non-Sport Cards -->
+                    <% if (navigationTree.non_sport && Object.keys(navigationTree.non_sport).length > 0) { %>
+                    <div class="tree-level-1">
+                        <div class="tree-item category">
+                            <i class="bi bi-chevron-right tree-toggle"></i>
+                            <strong>Non-Sport Cards</strong>
+                        </div>
+                        <div class="tree-children" style="display: none;">
+                            <% Object.keys(navigationTree.non_sport).sort().forEach(manufacturer => { %>
+                                <div class="tree-level-2">
+                                    <div class="tree-item manufacturer">
+                                        <i class="bi bi-chevron-right tree-toggle"></i>
+                                        <%= manufacturer %>
+                                    </div>
+                                    <div class="tree-children" style="display: none;">
+                                        <% Object.keys(navigationTree.non_sport[manufacturer]).sort((a,b) => b - a).forEach(year => { %>
+                                            <div class="tree-level-3">
+                                                <div class="tree-item year">
+                                                    <i class="bi bi-chevron-right tree-toggle"></i>
+                                                    <%= year %>
+                                                </div>
+                                                <div class="tree-children" style="display: none;">
+                                                    <% navigationTree.non_sport[manufacturer][year].forEach(set => { %>
+                                                        <div class="tree-level-4">
+                                                            <a href="?manufacturer=<%= encodeURIComponent(manufacturer) %>&year=<%= year !== 'No Year' ? year : '' %>&set_name=<%= encodeURIComponent(set.name) %>"
+                                                               class="tree-item set <%= filters.set_name === set.name ? 'active' : '' %>">
+                                                                <%= set.name %> (<%= set.count %>)
+                                                            </a>
+                                                        </div>
+                                                    <% }); %>
+                                                </div>
+                                            </div>
+                                        <% }); %>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Search & Filters -->
             <div class="filter-section">
-                <h5 class="mb-3">Filters</h5>
+                <h5 class="mb-3">Search & Filters</h5>
                 <form action="/cards" method="GET">
                     <!-- Search -->
                     <div class="mb-3">
@@ -92,6 +197,7 @@
                     <a href="/cards" class="btn btn-outline-secondary w-100">Clear Filters</a>
                 </form>
             </div>
+            </div> <!-- Close collapse -->
         </div>
 
         <!-- Cards Grid -->
@@ -102,6 +208,7 @@
 
             <% if (cards && cards.length > 0) { %>
             <div class="product-grid">
+                <% const collectionSet = new Set(collectionCardIds || []); %>
                 <% cards.forEach(card => { %>
                 <div class="card">
                     <% if (card.image_front) { %>
@@ -117,6 +224,13 @@
                                 <i class="bi bi-zoom-in"></i>
                             </span>
                         </div>
+                        <% if (collectionSet.has(card.id)) { %>
+                        <div class="position-absolute top-0 start-0 m-2">
+                            <span class="badge bg-success" style="font-size: 0.7rem;">
+                                <i class="bi bi-check-circle-fill"></i> Have it
+                            </span>
+                        </div>
+                        <% } %>
                     </div>
                     <% } else { %>
                     <div class="card-img-top d-flex align-items-center justify-content-center bg-light">
@@ -128,6 +242,7 @@
                             <h5 class="card-title text-dark"><%= card.card_name %></h5>
                             <p class="card-text text-muted small mb-2">
                                 <%= card.set_name || 'N/A' %>
+                                <% if (card.card_number) { %>#<%= card.card_number %><% } %>
                                 <% if (card.year) { %>(<%= card.year %>)<% } %>
                             </p>
                             <% if (card.condition) { %>
@@ -135,11 +250,15 @@
                                 <%= card.condition %>
                             </span>
                             <% } %>
-                            <div class="price-tag">NZD $<%= card.price_nzd.toFixed(2) %></div>
-                            <% if (card.quantity > 0) { %>
-                            <p class="text-muted small mb-0"><%= card.quantity %> in stock</p>
+                            <% if (card.price_nzd) { %>
+                            <div class="price-tag">NZD $<%= parseFloat(card.price_nzd).toFixed(2) %></div>
                             <% } else { %>
-                            <p class="text-danger small mb-0">Out of stock</p>
+                            <span class="badge bg-secondary">Price TBC</span>
+                            <% } %>
+                            <% if (card.quantity > 0) { %>
+                            <p class="mb-0 mt-1 small"><i class="bi bi-circle-fill text-success" style="font-size:0.5rem;vertical-align:middle;"></i> In stock</p>
+                            <% } else { %>
+                            <p class="mb-0 mt-1 small"><i class="bi bi-circle-fill text-danger" style="font-size:0.5rem;vertical-align:middle;"></i> Out of stock</p>
                             <% } %>
                         </div>
                     </a>
@@ -149,18 +268,28 @@
 
             <!-- Pagination -->
             <% if (totalPages > 1) { %>
+            <%
+                // Build query string from filters
+                const queryParams = [];
+                Object.keys(filters).forEach(key => {
+                    if (filters[key] && filters[key] !== '') {
+                        queryParams.push(`${key}=${encodeURIComponent(filters[key])}`);
+                    }
+                });
+                const filterQuery = queryParams.length > 0 ? '&' + queryParams.join('&') : '';
+            %>
             <nav class="mt-4">
                 <ul class="pagination justify-content-center">
                     <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-                        <a class="page-link" href="?page=<%= currentPage - 1 %>&<%= new URLSearchParams(filters).toString() %>">Previous</a>
+                        <a class="page-link" href="?page=<%= currentPage - 1 %><%= filterQuery %>">Previous</a>
                     </li>
                     <% for (let i = 1; i <= totalPages; i++) { %>
                     <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                        <a class="page-link" href="?page=<%= i %>&<%= new URLSearchParams(filters).toString() %>"><%= i %></a>
+                        <a class="page-link" href="?page=<%= i %><%= filterQuery %>"><%= i %></a>
                     </li>
                     <% } %>
                     <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
-                        <a class="page-link" href="?page=<%= currentPage + 1 %>&<%= new URLSearchParams(filters).toString() %>">Next</a>
+                        <a class="page-link" href="?page=<%= currentPage + 1 %><%= filterQuery %>">Next</a>
                     </li>
                 </ul>
             </nav>
@@ -189,8 +318,106 @@
     </div>
 </div>
 
+<style>
+.tree-navigation {
+    font-size: 0.9rem;
+}
+
+.tree-item {
+    padding: 0.4rem 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tree-item:hover {
+    background-color: #f8f9fa;
+}
+
+.tree-item.set {
+    text-decoration: none;
+    color: #333;
+    padding-left: 1.5rem;
+}
+
+.tree-item.set:hover {
+    background-color: #e9ecef;
+    color: #0d6efd;
+}
+
+.tree-item.set.active {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 500;
+}
+
+.tree-toggle {
+    font-size: 0.8rem;
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.tree-toggle.expanded {
+    transform: rotate(90deg);
+}
+
+.tree-level-2 {
+    padding-left: 0.75rem;
+}
+
+.tree-level-3 {
+    padding-left: 0.75rem;
+}
+
+.tree-level-4 {
+    padding-left: 0.75rem;
+}
+
+.tree-level-5 {
+    padding-left: 0.5rem;
+}
+
+.tree-children {
+    margin-top: 0.25rem;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Tree navigation toggle
+    document.querySelectorAll('.tree-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const parent = this.closest('.tree-level-1, .tree-level-2, .tree-level-3, .tree-level-4, .tree-level-5');
+            const children = parent.querySelector('.tree-children');
+
+            if (children.style.display === 'none') {
+                children.style.display = 'block';
+                this.classList.add('expanded');
+            } else {
+                children.style.display = 'none';
+                this.classList.remove('expanded');
+            }
+        });
+    });
+
+    // Auto-expand selected set's parents
+    const activeSet = document.querySelector('.tree-item.set.active');
+    if (activeSet) {
+        let parent = activeSet.closest('.tree-children');
+        while (parent) {
+            parent.style.display = 'block';
+            const toggle = parent.previousElementSibling.querySelector('.tree-toggle');
+            if (toggle) {
+                toggle.classList.add('expanded');
+            }
+            parent = parent.parentElement.closest('.tree-children');
+        }
+    }
+
     // Add click event listeners to all card images
     document.querySelectorAll('.card-lightbox-trigger').forEach(function(img) {
         img.addEventListener('click', function(e) {

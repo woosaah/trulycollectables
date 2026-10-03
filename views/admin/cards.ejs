@@ -8,9 +8,10 @@
         </a>
     </div>
 
-    <% if (typeof req !== 'undefined' && req.query.success) { %>
+    <% if (success) { %>
     <div class="alert alert-success alert-dismissible fade show">
-        <i class="bi bi-check-circle"></i> Card <%= req.query.success %>!
+        <i class="bi bi-check-circle"></i> Card <%= success %>!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     <% } %>
 
@@ -18,21 +19,36 @@
     <div class="card mb-4">
         <div class="card-body">
             <form action="/admin/cards" method="GET" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Search cards...">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select class="form-select" name="card_category">
                         <option value="">All Categories</option>
                         <option value="sport" <%= filters.card_category === 'sport' ? 'selected' : '' %>>Sport</option>
                         <option value="non_sport" <%= filters.card_category === 'non_sport' ? 'selected' : '' %>>Non-Sport</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select class="form-select" name="sport_type">
                         <option value="">All Types</option>
                         <% sportTypes.forEach(sport => { %>
                         <option value="<%= sport %>" <%= filters.sport_type === sport ? 'selected' : '' %>><%= sport %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="set_name">
+                        <option value="">All Sets</option>
+                        <% setNames.forEach(set => { %>
+                        <option value="<%= set %>" <%= filters.set_name === set ? 'selected' : '' %>><%= set %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="limit">
+                        <% allowedLimits.forEach(function(n) { %>
+                        <option value="<%= n %>" <%= limit === n ? "selected" : "" %>><%= n %> per page</option>
                         <% }); %>
                     </select>
                 </div>
@@ -49,9 +65,10 @@
             <thead>
                 <tr>
                     <th>Card</th>
+                    <th>#</th>
                     <th>Set</th>
-                    <th>Category</th>
-                    <th>Type</th>
+                    <th class="d-none d-xl-table-cell">Category</th>
+                    <th class="d-none d-xl-table-cell">Type</th>
                     <th>Condition</th>
                     <th>Price</th>
                     <th>Qty</th>
@@ -63,8 +80,9 @@
                 <% cards.forEach(card => { %>
                 <tr>
                     <td><strong><%= card.card_name %></strong></td>
+                    <td><%= card.card_number || '-' %></td>
                     <td><%= card.set_name || '-' %></td>
-                    <td>
+                    <td class="d-none d-xl-table-cell">
                         <% if (card.card_category === 'sport') { %>
                         <span class="badge bg-primary">Sport</span>
                         <% } else if (card.card_category === 'non_sport') { %>
@@ -73,7 +91,7 @@
                         -
                         <% } %>
                     </td>
-                    <td><%= card.sport_type || '-' %></td>
+                    <td class="d-none d-xl-table-cell"><%= card.sport_type || '-' %></td>
                     <td>
                         <% if (card.condition) { %>
                         <span class="badge badge-<%= card.condition.toLowerCase().replace(/[^a-z]/g, '') %>">
@@ -81,10 +99,19 @@
                         </span>
                         <% } %>
                     </td>
-                    <td>$<%= card.price_nzd.toFixed(2) %></td>
-                    <td><%= card.quantity %></td>
+                    <td><%= card.price_nzd ? '$' + parseFloat(card.price_nzd).toFixed(2) : 'TBC' %></td>
+                    <td>
+                        <form action="/admin/cards/<%= card.id %>/update-quantity" method="POST" class="d-flex align-items-center gap-1" style="min-width:90px">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <input type="hidden" name="return_to" value="<%= currentUrl %>">
+                            <input type="number" name="quantity" value="<%= card.quantity %>" min="0" class="form-control form-control-sm" style="width:60px">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Save">&#10003;</button>
+                        </form>
+                    </td>
                     <td>
                         <form action="/admin/cards/<%= card.id %>/toggle-availability" method="POST" class="d-inline">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <input type="hidden" name="return_to" value="<%= currentUrl %>">
                             <button type="submit" class="btn btn-sm <%= card.available ? 'btn-success' : 'btn-secondary' %>">
                                 <%= card.available ? 'Yes' : 'No' %>
                             </button>
@@ -93,6 +120,7 @@
                     <td>
                         <a href="/admin/cards/<%= card.id %>/edit" class="btn btn-sm btn-outline-primary">Edit</a>
                         <form action="/admin/cards/<%= card.id %>/delete" method="POST" class="d-inline">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"
                                     onclick="return confirmDelete('Delete this card?')">Delete</button>
                         </form>
@@ -108,7 +136,7 @@
         <ul class="pagination">
             <% for (let i = 1; i <= totalPages; i++) { %>
             <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                <a class="page-link" href="?page=<%= i %><%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %><%= filters.card_category ? '&card_category=' + encodeURIComponent(filters.card_category) : '' %><%= filters.sport_type ? '&sport_type=' + encodeURIComponent(filters.sport_type) : '' %><%= filters.set_name ? '&set_name=' + encodeURIComponent(filters.set_name) : '' %>&limit=<%= limit %>&sort=<%= filters.sort %>&order=<%= filters.order %>"><%= i %></a>
             </li>
             <% } %>
         </ul>

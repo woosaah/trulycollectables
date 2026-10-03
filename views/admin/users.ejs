@@ -1,0 +1,82 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Manage Users</h2>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+    <div class="alert alert-success alert-dismissible fade show">
+        <% if (success === 'api_revoked') { %>
+        API access has been revoked successfully.
+        <% } else { %>
+        Action completed successfully.
+        <% } %>
+    </div>
+    <% } %>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <% if (error === 'revoke_failed') { %>
+        Failed to revoke API access.
+        <% } else if (error === 'user_not_found') { %>
+        User not found.
+        <% } else if (error === 'toggle_failed') { %>
+        Failed to update user.
+        <% } else { %>
+        An error occurred.
+        <% } %>
+    </div>
+    <% } %>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Society Member</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% users.forEach(user => { %>
+                        <tr>
+                            <td><%= user.id %></td>
+                            <td><strong><%= user.username %></strong></td>
+                            <td><%= user.email %></td>
+                            <td>
+                                <span class="badge <%= user.role === 'admin' ? 'bg-danger' : 'bg-primary' %>">
+                                    <%= user.role.toUpperCase() %>
+                                </span>
+                            </td>
+                            <td>
+                                <form method="POST" action="/admin/users/<%= user.id %>/toggle-society-member" class="d-inline">
+                                    <button type="submit" class="btn btn-sm <%= user.is_society_member ? 'btn-success' : 'btn-outline-secondary' %>">
+                                        <i class="bi <%= user.is_society_member ? 'bi-star-fill' : 'bi-star' %>"></i>
+                                        <%= user.is_society_member ? 'Member' : 'Not Member' %>
+                                    </button>
+                                </form>
+                            </td>
+                            <td><%= new Date(user.created_at).toLocaleDateString() %></td>
+                            <td>
+                                <form method="POST" action="/admin/users/<%= user.id %>/toggle-society-member" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"
+                                        title="Toggle society membership">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

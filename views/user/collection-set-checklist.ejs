@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title><%= setName %> | Checklist</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #111; color: #eee; margin: 0; font-family: system-ui, sans-serif; }
+
+        /* --- Sticky header --- */
+        #checklist-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: #1a1a1a;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        #progress-bar-track {
+            height: 5px;
+            background: #2a2a2a;
+            border-radius: 3px;
+            margin-bottom: 0.6rem;
+        }
+        #progress-bar-inner {
+            height: 100%;
+            background: #198754;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* --- Filter tabs --- */
+        .filter-tabs { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+        .filter-tab {
+            background: #222;
+            color: #aaa;
+            border: 1px solid #444;
+            border-radius: 20px;
+            padding: 0.25rem 0.85rem;
+            font-size: 0.82rem;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .filter-tab.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+
+        /* --- Search --- */
+        #card-search {
+            background: #222;
+            border: 1px solid #3a3a3a;
+            color: #fff;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            font-size: 1rem;
+        }
+        #card-search::placeholder { color: #555; }
+        #card-search:focus { outline: none; border-color: #0d6efd; }
+
+        /* --- Card rows --- */
+        .card-row {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid #1e1e1e;
+            min-height: 64px;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+            transition: background 0.1s;
+        }
+        .card-row:active { background: #1c1c1c; }
+        .card-row.is-have { background: #0a2416; }
+        .card-row.is-have:active { background: #0d2e1c; }
+        .card-row.row-loading { opacity: 0.6; pointer-events: none; }
+
+        /* --- Thumbnail --- */
+        .card-thumb {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid #2a2a2a;
+            background: #1a1a1a;
+            flex-shrink: 0;
+        }
+        .card-thumb-placeholder {
+            width: 44px;
+            height: 44px;
+            border-radius: 4px;
+            border: 1px solid #2a2a2a;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #444;
+            font-size: 1.1rem;
+        }
+
+        /* --- Card info --- */
+        .card-info { flex-grow: 1; margin: 0 0.75rem; overflow: hidden; }
+        .card-num { font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.2; }
+        .card-title { font-size: 0.82rem; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-insert { font-size: 0.72rem; color: #555; margin-top: 1px; }
+
+        /* --- Check circle --- */
+        .card-check {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #3a3a3a;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.15s;
+        }
+        .card-row.is-have .card-check {
+            background: #198754;
+            border-color: #198754;
+            color: #fff;
+        }
+
+        /* --- Empty state --- */
+        #empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sticky header -->
+<div id="checklist-header">
+    <div class="d-flex align-items-center mb-2">
+        <a href="/user/collection/sets" style="color:#aaa; font-size:1.3rem; margin-right:0.75rem; text-decoration:none;">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div class="flex-grow-1 text-truncate" style="font-weight:600; font-size:0.9rem; line-height:1.2;">
+            <%= setName %>
+        </div>
+        <div style="white-space:nowrap; font-size:0.82rem; color:#888; margin-left:0.5rem;">
+            <span id="have-count-label"><%= have %></span> / <%= total %>
+        </div>
+    </div>
+
+    <div id="progress-bar-track">
+        <div id="progress-bar-inner" style="width: <%= total > 0 ? Math.round(have / total * 100) : 0 %>%"></div>
+    </div>
+
+    <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-tab" onclick="setFilter('have', this)">Have</button>
+        <button class="filter-tab" onclick="setFilter('missing', this)">Missing</button>
+    </div>
+
+    <input type="search" id="card-search" placeholder="Search by # or name…"
+           oninput="applyFilters()" autocomplete="off">
+</div>
+
+<!-- Card list -->
+<div id="card-list">
+    <% cards.forEach(card => { %>
+    <div class="card-row <%= card.user_has ? 'is-have' : '' %>"
+         data-card-id="<%= card.id %>"
+         data-has="<%= card.user_has ? '1' : '0' %>"
+         data-number="<%= (card.card_number || '').toLowerCase() %>"
+         data-name="<%= card.card_name.toLowerCase() %>"
+         onclick="toggleCard(this)">
+
+        <% if (card.image_front) { %>
+        <img src="<%= card.image_front %>" class="card-thumb" alt="" loading="lazy">
+        <% } else { %>
+        <div class="card-thumb-placeholder"><i class="bi bi-image"></i></div>
+        <% } %>
+
+        <div class="card-info">
+            <div class="card-num">#<%= card.card_number || '—' %></div>
+            <div class="card-title"><%= card.card_name %></div>
+            <% if (card.insert_list) { %><div class="card-insert"><%= card.insert_list %></div><% } %>
+        </div>
+
+        <div class="card-check">
+            <% if (card.user_has) { %><i class="bi bi-check-lg"></i><% } %>
+        </div>
+    </div>
+    <% }) %>
+</div>
+
+<div id="empty-state" class="d-none">
+    <i class="bi bi-search" style="font-size:2rem;"></i>
+    <p class="mt-2">No cards match your filter.</p>
+</div>
+
+<script>
+const csrfToken = '<%= locals.csrfToken || "" %>';
+let haveCount = <%= have %>;
+const totalCount = <%= total %>;
+let currentFilter = 'all';
+
+async function toggleCard(row) {
+    if (row.classList.contains('row-loading')) return;
+    const cardId = row.dataset.cardId;
+    const wasHave = row.dataset.has === '1';
+    row.classList.add('row-loading');
+
+    try {
+        const res = await fetch('/user/collection/toggle/' + cardId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+            body: JSON.stringify({ _csrf: csrfToken })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error('Toggle failed');
+
+        const isNowHave = data.active;
+        row.dataset.has = isNowHave ? '1' : '0';
+        const check = row.querySelector('.card-check');
+
+        if (isNowHave) {
+            row.classList.add('is-have');
+            check.innerHTML = '<i class="bi bi-check-lg"></i>';
+            if (!wasHave) haveCount++;
+        } else {
+            row.classList.remove('is-have');
+            check.innerHTML = '';
+            if (wasHave) haveCount--;
+        }
+
+        updateProgress();
+
+        // If the card just changed and would be hidden by current filter,
+        // give a brief moment of visual feedback before applying the filter
+        const wouldHide = (currentFilter === 'missing' && isNowHave) ||
+                          (currentFilter === 'have' && !isNowHave);
+        if (wouldHide) {
+            setTimeout(applyFilters, 900);
+        } else {
+            applyFilters();
+        }
+    } catch (err) {
+        console.error('Toggle error:', err);
+    } finally {
+        row.classList.remove('row-loading');
+    }
+}
+
+function updateProgress() {
+    const pct = totalCount > 0 ? Math.round(haveCount / totalCount * 100) : 0;
+    document.getElementById('progress-bar-inner').style.width = pct + '%';
+    document.getElementById('have-count-label').textContent = haveCount;
+}
+
+function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+}
+
+function applyFilters() {
+    const q = (document.getElementById('card-search').value || '').toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('#card-list .card-row').forEach(row => {
+        const has = row.dataset.has === '1';
+        const passFilter = currentFilter === 'all' ||
+            (currentFilter === 'have' && has) ||
+            (currentFilter === 'missing' && !has);
+        const passSearch = !q || row.dataset.number.includes(q) || row.dataset.name.includes(q);
+        const show = passFilter && passSearch;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    document.getElementById('empty-state').classList.toggle('d-none', visible > 0);
+}
+</script>
+</body>
+</html>

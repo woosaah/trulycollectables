@@ -1,0 +1,105 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="bi bi-camera me-2"></i>Card Scanner</h2>
+        <a href="/admin" class="btn btn-outline-secondary btn-sm">Back</a>
+    </div>
+
+    <p class="text-muted mb-4">Pick a set or player to scan. Cards must already exist in the database — scanner just adds the photos.</p>
+
+    <ul class="nav nav-tabs mb-4" id="scanTabs">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#by-set">By Set</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#by-player">By Player</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- By Set -->
+        <div class="tab-pane fade show active" id="by-set">
+            <input type="search" class="form-control mb-3" placeholder="Search sets..." oninput="filterCards('set-grid', this.value)">
+            <div class="row g-3" id="set-grid">
+                <% sets.forEach(set => { %>
+                <div class="col-md-6 col-lg-4" data-name="<%= set.set_name %>">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title"><%= set.set_name %></h6>
+                            <p class="text-muted small mb-2"><%= set.has_image %> / <%= set.total %> have images</p>
+                            <div class="progress mb-3" style="height:6px;">
+                                <div class="progress-bar bg-success"
+                                     style="width:<%= set.total > 0 ? Math.round(set.has_image / set.total * 100) : 0 %>%">
+                                </div>
+                            </div>
+                            <a href="/admin/scan/session?set=<%= encodeURIComponent(set.set_name) %>"
+                               class="btn btn-primary mt-auto">
+                                <i class="bi bi-camera"></i> Scan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <% }) %>
+                <% if (sets.length === 0) { %>
+                <div class="col-12"><div class="alert alert-info">No sets found.</div></div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- By Player -->
+        <div class="tab-pane fade" id="by-player">
+            <input type="search" class="form-control mb-3" id="player-search-input" placeholder="Search players by name...">
+            <div id="player-search-hint" class="text-muted small mb-3">Type to search all players</div>
+            <div class="row g-3" id="player-results"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterCards(gridId, query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('#' + gridId + ' [data-name]').forEach(el => {
+        el.style.display = el.dataset.name.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+(function() {
+    const input = document.getElementById('player-search-input');
+    const results = document.getElementById('player-results');
+    const hint = document.getElementById('player-search-hint');
+    let timer;
+
+    input.addEventListener('input', function() {
+        clearTimeout(timer);
+        const q = this.value.trim();
+        if (!q) {
+            results.innerHTML = '';
+            hint.style.display = '';
+            return;
+        }
+        hint.style.display = 'none';
+        timer = setTimeout(async function() {
+            try {
+                const resp = await fetch('/admin/api/players/search?q=' + encodeURIComponent(q));
+                const players = await resp.json();
+                if (!players.length) {
+                    results.innerHTML = '<div class="col-12"><div class="alert alert-info">No players found matching "' + q.replace(/</g,'&lt;') + '"</div></div>';
+                    return;
+                }
+                results.innerHTML = players.map(function(p) {
+                    return '<div class="col-md-6 col-lg-4"><div class="card h-100"><div class="card-body d-flex flex-column">' +
+                        '<h6 class="card-title">' + p.name.replace(/</g,'&lt;') + '</h6>' +
+                        '<a href="/admin/scan/session?player_id=' + p.id + '" class="btn btn-primary mt-auto">' +
+                        '<i class="bi bi-camera"></i> Scan</a>' +
+                        '</div></div></div>';
+                }).join('');
+            } catch(e) {
+                results.innerHTML = '<div class="col-12"><div class="alert alert-danger">Search failed — try again.</div></div>';
+            }
+        }, 300);
+    });
+})();
+</script>
+
+<%- include('../partials/footer') %>

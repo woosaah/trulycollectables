@@ -1,0 +1,104 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/players">Players</a></li>
+            <li class="breadcrumb-item active"><%= player.name %></li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <% if (player.image_url) { %>
+                    <img src="<%= player.image_url %>" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    <% } else { %>
+                    <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px;">
+                        <i class="bi bi-person text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                    <% } %>
+
+                    <h3><%= player.name %></h3>
+
+                    <div class="mb-3">
+                        <% if (player.born_in_nz) { %><span class="badge bg-success">Born in NZ</span><% } %>
+                    </div>
+
+                    <% if (player.sports_played && player.sports_played.length > 0) { %>
+                    <h6>Sports</h6>
+                    <div class="mb-3">
+                        <% player.sports_played.forEach(sport => { %>
+                        <span class="badge bg-secondary"><%= sport %></span>
+                        <% }); %>
+                    </div>
+                    <% } %>
+
+                    <h6>Representative Teams</h6>
+                    <div class="mb-3">
+                        <% if (player.played_for_all_blacks) { %><span class="badge bg-dark">All Blacks</span><% } %>
+                        <% if (player.played_for_maori) { %><span class="badge bg-dark">Maori All Blacks</span><% } %>
+                        <% if (player.played_for_kiwis) { %><span class="badge bg-success">Kiwis</span><% } %>
+                        <% if (player.played_for_maori_rl) { %><span class="badge bg-success">Maori RL</span><% } %>
+                        <% if (player.played_for_black_caps) { %><span class="badge bg-primary">Black Caps</span><% } %>
+                        <% if (player.played_for_white_ferns) { %><span class="badge bg-info">White Ferns</span><% } %>
+                        <% if (player.played_for_black_ferns) { %><span class="badge bg-dark">Black Ferns</span><% } %>
+                        <% if (player.played_for_kiwi_ferns) { %><span class="badge bg-success">Kiwi Ferns</span><% } %>
+                        <% if (player.played_for_tall_blacks) { %><span class="badge bg-warning text-dark">Tall Blacks</span><% } %>
+                    </div>
+
+                    <% if (player.other_teams) { %>
+                    <h6>Other Teams</h6>
+                    <p class="text-muted"><%= player.other_teams %></p>
+                    <% } %>
+
+                    <% if (player.bio) { %>
+                    <hr>
+                    <p><%= player.bio %></p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <h4 class="mb-3">Cards (<%= cards.length %>)</h4>
+
+            <% if (cards.length > 0) { %>
+            <div class="product-grid">
+                <% cards.forEach(card => { %>
+                <a href="/cards/<%= card.id %>" class="text-decoration-none">
+                    <div class="card h-100">
+                        <% if (card.image_front) { %>
+                        <img src="<%= card.image_front %>" class="card-img-top" alt="<%= card.card_name %>">
+                        <% } else { %>
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center">
+                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                        <% } %>
+                        <div class="card-body">
+                            <h6 class="card-title text-dark">
+                                <%= card.card_name %>
+                                <% if (card.is_rookie_card) { %><span class="badge bg-warning text-dark">RC</span><% } %>
+                            </h6>
+                            <p class="text-muted small mb-1"><%= card.set_name || '' %><% if (card.card_number) { %> <span class="fw-semibold">#<%= card.card_number %></span><% } %></p>
+                            <% if (card.team) { %><p class="text-muted small mb-1"><%= card.team %></p><% } %>
+                            <span class="price-tag">$<%= card.price_nzd ? parseFloat(card.price_nzd).toFixed(2) : '0.00' %></span>
+                            <% if (card.quantity > 0) { %>
+                            <p class="mb-0 mt-1 small"><i class="bi bi-circle-fill text-success" style="font-size:0.5rem;vertical-align:middle;"></i> In stock</p>
+                            <% } else { %>
+                            <p class="mb-0 mt-1 small"><i class="bi bi-circle-fill text-danger" style="font-size:0.5rem;vertical-align:middle;"></i> Out of stock</p>
+                            <% } %>
+                        </div>
+                    </div>
+                </a>
+                <% }); %>
+            </div>
+            <% } else { %>
+            <div class="alert alert-info">No cards linked to this player yet.</div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

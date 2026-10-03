@@ -42,5 +42,163 @@
 
     <!-- Custom JS -->
     <script src="/js/main.js"></script>
+
+<% if (isAdmin) { %>
+    <!-- html2canvas for ticket screenshots -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <!-- Floating report issue button -->
+    <div id="ticket-fab" style="position:fixed;bottom:28px;right:28px;z-index:9000;">
+        <button class="btn btn-danger rounded-circle shadow-lg d-flex align-items-center justify-content-center"
+                style="width:52px;height:52px;font-size:1.2rem;"
+                title="Report Issue"
+                onclick="ticketFabClick(event)">
+            <i class="bi bi-bug"></i>
+        </button>
+    </div>
+
+    <!-- Ticket modal -->
+    <div class="modal fade" id="ticketModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-bug me-2"></i>Report Issue</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Title</label>
+                        <input type="text" class="form-control" id="ticket-title" placeholder="e.g. Price not displaying correctly on card detail">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea class="form-control" id="ticket-desc" rows="4"
+                            placeholder="What's broken? Steps to reproduce, expected vs actual behaviour..."></textarea>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold d-flex justify-content-between">
+                            Screenshot
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="recapture-btn" onclick="recaptureScreenshot()">
+                                <i class="bi bi-camera"></i> Recapture
+                            </button>
+                        </label>
+                        <div id="screenshot-preview" class="border rounded p-3 text-center text-muted small"
+                             style="min-height:80px;display:flex;align-items:center;justify-content:center;">
+                            Capturing...
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="submit-ticket-btn" onclick="submitTicket()">
+                        <i class="bi bi-send"></i> Submit Ticket
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let _ticketScreenshot = null;
+    let _ticketModal = null;
+
+    function getTicketModal() {
+        if (!_ticketModal) _ticketModal = new bootstrap.Modal(document.getElementById('ticketModal'));
+        return _ticketModal;
+    }
+
+    function ticketFabClick(e) {
+        getTicketModal().show();
+        doCapture();
+    }
+
+    async function recaptureScreenshot() {
+        const btn = document.getElementById('recapture-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        getTicketModal().hide();
+        await new Promise(r => setTimeout(r, 350));
+
+        await doCapture();
+
+        getTicketModal().show();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-camera"></i> Recapture';
+    }
+
+    async function doCapture() {
+        const preview = document.getElementById('screenshot-preview');
+        preview.innerHTML = 'Capturing...';
+        try {
+            const canvas = await Promise.race([
+                html2canvas(document.body, { scale: 0.6, useCORS: true, allowTaint: true, logging: false }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('screenshot timeout')), 6000))
+            ]);
+            _ticketScreenshot = canvas.toDataURL('image/jpeg', 0.65);
+            const img = document.createElement('img');
+            img.src = _ticketScreenshot;
+            img.style.cssText = 'max-width:100%;border-radius:4px;';
+            preview.innerHTML = '';
+            preview.style.cssText = '';
+            preview.appendChild(img);
+        } catch (err) {
+            _ticketScreenshot = null;
+            preview.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> Screenshot failed — ticket will be filed without one.</span>';
+        }
+    }
+
+    async function submitTicket() {
+        const title = document.getElementById('ticket-title').value.trim();
+        const description = document.getElementById('ticket-desc').value.trim();
+
+        if (!title || !description) {
+            alert('Please fill in the title and description.');
+            return;
+        }
+
+        const btn = document.getElementById('submit-ticket-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+
+        try {
+            const res = await fetch('/admin/tickets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-csrf-token': '<%= locals.csrfToken || "" %>'
+                },
+                body: JSON.stringify({
+                    title,
+                    description,
+                    screenshot: _ticketScreenshot,
+                    page_url: window.location.href,
+                    page_title: document.title
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                getTicketModal().hide();
+                document.getElementById('ticket-title').value = '';
+                document.getElementById('ticket-desc').value = '';
+                document.getElementById('screenshot-preview').innerHTML = 'Capturing...';
+                _ticketScreenshot = null;
+
+                if (confirm(`Ticket #${data.id} created. View it now?`)) {
+                    window.location.href = `/admin/tickets/${data.id}`;
+                }
+            } else {
+                alert('Failed to submit ticket. Please try again.');
+            }
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send"></i> Submit Ticket';
+        }
+    }
+    </script>
+<% } %>
 </body>
 </html>

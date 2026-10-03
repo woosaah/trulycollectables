@@ -33,10 +33,11 @@
                         </span>
                         <% } %>
                     </td>
-                    <td>NZD $<%= match.price_nzd.toFixed(2) %></td>
+                    <td>NZD $<%= parseFloat(match.price_nzd).toFixed(2) %></td>
                     <td><%= match.available_quantity %></td>
                     <td>
                         <a href="/cards/<%= match.card_id %>" class="btn btn-sm btn-outline-primary me-1">View</a>
+                        <% if (match.available_quantity > 0) { %>
                         <form action="/user/cart/add" method="POST" class="d-inline">
                             <input type="hidden" name="card_id" value="<%= match.card_id %>">
                             <input type="hidden" name="quantity" value="1">
@@ -44,6 +45,9 @@
                                 <i class="bi bi-cart-plus"></i> Add to Cart
                             </button>
                         </form>
+                        <% } else { %>
+                        <button type="button" class="btn btn-sm btn-secondary" disabled>Out of Stock</button>
+                        <% } %>
                     </td>
                 </tr>
                 <% }); %>

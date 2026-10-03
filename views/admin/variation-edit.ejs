@@ -1,0 +1,75 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/cards">Cards</a></li>
+                    <li class="breadcrumb-item"><a href="/admin/cards/<%= card.id %>/edit"><%= card.card_name %></a></li>
+                    <li class="breadcrumb-item active">Edit Variation</li>
+                </ol>
+            </nav>
+
+            <h2 class="mb-4">Edit Variation — <span class="text-muted"><%= variation.variation_name %></span></h2>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="/admin/cards/<%= card.id %>/variations/<%= variation.id %>/edit" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label">Variation Name *</label>
+                            <input type="text" class="form-control" name="variation_name" value="<%= variation.variation_name %>" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price (NZD)</label>
+                                <input type="number" class="form-control" name="price_nzd" step="0.01" min="0" value="<%= parseFloat(variation.price_nzd).toFixed(2) %>">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" name="quantity" min="0" value="<%= variation.quantity %>">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Condition</label>
+                                <select class="form-select" name="condition">
+                                    <option value="">Any</option>
+                                    <option value="mint" <%= variation.condition === 'mint' ? 'selected' : '' %>>Mint</option>
+                                    <option value="near_mint" <%= variation.condition === 'near_mint' ? 'selected' : '' %>>Near Mint</option>
+                                    <option value="excellent" <%= variation.condition === 'excellent' ? 'selected' : '' %>>Excellent</option>
+                                    <option value="good" <%= variation.condition === 'good' ? 'selected' : '' %>>Good</option>
+                                    <option value="played" <%= variation.condition === 'played' ? 'selected' : '' %>>Played</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sort Order</label>
+                                <input type="number" class="form-control" name="sort_order" min="0" value="<%= variation.sort_order %>">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Image</label>
+                            <% if (variation.image_url) { %>
+                            <div class="mb-2">
+                                <img src="<%= variation.image_url %>" class="img-thumbnail" style="max-height:150px;">
+                                <p class="text-muted small mt-1">Upload a new image to replace</p>
+                            </div>
+                            <% } %>
+                            <input type="file" class="form-control" name="variation_image" accept="image/*">
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <a href="/admin/cards/<%= card.id %>/edit" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

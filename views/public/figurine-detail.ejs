@@ -13,10 +13,20 @@
         <!-- Image Section -->
         <div class="col-md-6 mb-4">
             <% if (figurine.image_url) { %>
-            <img src="<%= figurine.image_url %>" class="img-fluid product-image-main w-100" alt="<%= figurine.product_name %>">
+            <img src="<%= figurine.image_url %>" class="img-fluid product-image-main w-100" alt="<%= figurine.product_name %>" id="mainImage" style="cursor: pointer; border-radius: 8px;" data-full="<%= figurine.image_url %>">
             <% } else { %>
             <div class="product-image-main w-100 d-flex align-items-center justify-content-center" style="height: 500px;">
                 <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
+            </div>
+            <% } %>
+
+            <% if (typeof images !== 'undefined' && images && images.length > 0) { %>
+            <div class="d-flex gap-2 mt-3 flex-wrap" id="imageThumbnails">
+                <% images.forEach(img => { %>
+                <img src="<%= img.image_url %>" class="img-thumbnail figurine-thumb" alt="<%= figurine.product_name %>"
+                     style="width: 80px; height: 80px; object-fit: cover; cursor: pointer; border: 2px solid transparent;"
+                     data-full="<%= img.image_url %>">
+                <% }); %>
             </div>
             <% } %>
         </div>
@@ -25,22 +35,16 @@
         <div class="col-md-6">
             <h1 class="mb-3"><%= figurine.product_name %></h1>
 
-            <div class="price-tag mb-4">NZD $<%= figurine.price_nzd.toFixed(2) %></div>
-
-            <% if (figurine.price_aud) { %>
-            <p class="text-muted">AUD $<%= figurine.price_aud.toFixed(2) %></p>
+            <% if (figurine.sku) { %>
+            <p class="text-muted mb-2"><small>SKU: <%= figurine.sku %></small></p>
             <% } %>
+
+            <div class="price-tag mb-4">NZD $<%= parseFloat(figurine.price_nzd).toFixed(2) %></div>
 
             <table class="table table-sm mb-4">
                 <tbody>
-                    <% if (figurine.supplier) { %>
                     <tr>
-                        <th style="width: 150px;">Supplier:</th>
-                        <td><%= figurine.supplier %></td>
-                    </tr>
-                    <% } %>
-                    <tr>
-                        <th>Availability:</th>
+                        <th style="width: 150px;">Availability:</th>
                         <td>
                             <% if (figurine.quantity > 0) { %>
                             <span class="text-success"><i class="bi bi-check-circle"></i> <%= figurine.quantity %> in stock</span>
@@ -52,16 +56,9 @@
                 </tbody>
             </table>
 
-            <% if (figurine.description) { %>
-            <div class="mb-4">
-                <h5>Description</h5>
-                <p class="text-muted"><%= figurine.description %></p>
-            </div>
-            <% } %>
-
             <!-- Action Buttons -->
             <% if (figurine.quantity > 0) { %>
-            <form action="/user/cart/add" method="POST" class="mb-3">
+            <form action="/user/cart/add" method="POST" class="mb-4">
                 <input type="hidden" name="figurine_id" value="<%= figurine.id %>">
                 <div class="row g-2">
                     <div class="col-4">
@@ -75,12 +72,144 @@
                 </div>
             </form>
             <% } else { %>
-            <div class="alert alert-warning">
+            <div class="alert alert-warning mb-4">
                 <i class="bi bi-exclamation-triangle"></i> This figurine is currently out of stock.
+            </div>
+            <% } %>
+
+            <% if (user) { %>
+            <div class="d-flex gap-2 mb-4">
+                <button id="btn-have" onclick="toggleFigurine('have')"
+                        class="btn <%= userHas ? 'btn-success' : 'btn-outline-success' %>">
+                    <i class="bi <%= userHas ? 'bi-check-circle-fill' : 'bi-check-circle' %>"></i>
+                    <span id="have-label"><%= userHas ? 'In Collection' : 'Mark as Have' %></span>
+                </button>
+                <button id="btn-want" onclick="toggleFigurine('want')"
+                        class="btn <%= userWants ? 'btn-primary' : 'btn-outline-primary' %>">
+                    <i class="bi <%= userWants ? 'bi-bookmark-fill' : 'bi-bookmark' %>"></i>
+                    <span id="want-label"><%= userWants ? 'On Wishlist' : 'Mark as Want' %></span>
+                </button>
+            </div>
+            <% } %>
+
+            <% if (figurine.description) { %>
+            <div class="mb-4">
+                <h5>Description</h5>
+                <div class="text-muted"><%- figurine.description.replace(/\n/g, '<br>') %></div>
             </div>
             <% } %>
         </div>
     </div>
 </div>
+
+<!-- Image Lightbox -->
+<div id="lightbox" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; cursor:pointer; justify-content:center; align-items:center;">
+    <img id="lightboxImg" src="" alt="" style="max-width:90%; max-height:90%; object-fit:contain; border-radius:8px;">
+    <button id="lightboxPrev" style="position:absolute; left:20px; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.2); border:none; color:white; font-size:2rem; padding:10px 15px; border-radius:50%; cursor:pointer;">&lsaquo;</button>
+    <button id="lightboxNext" style="position:absolute; right:20px; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.2); border:none; color:white; font-size:2rem; padding:10px 15px; border-radius:50%; cursor:pointer;">&rsaquo;</button>
+    <button id="lightboxClose" style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
+</div>
+
+<script>
+async function toggleFigurine(status) {
+    const btn = document.getElementById('btn-' + status);
+    btn.disabled = true;
+    try {
+        const res = await fetch('/user/collection/toggle-figurine/<%= figurine.id %>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '<%= locals.csrfToken || "" %>' },
+            body: JSON.stringify({ status, _csrf: '<%= locals.csrfToken || "" %>' }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error();
+        const active = data.active;
+        if (status === 'have') {
+            btn.className = active ? 'btn btn-success' : 'btn btn-outline-success';
+            btn.querySelector('i').className = 'bi ' + (active ? 'bi-check-circle-fill' : 'bi-check-circle');
+            document.getElementById('have-label').textContent = active ? 'In Collection' : 'Mark as Have';
+        } else {
+            btn.className = active ? 'btn btn-primary' : 'btn btn-outline-primary';
+            btn.querySelector('i').className = 'bi ' + (active ? 'bi-bookmark-fill' : 'bi-bookmark');
+            document.getElementById('want-label').textContent = active ? 'On Wishlist' : 'Mark as Want';
+        }
+    } catch (e) {
+        console.error('Toggle error', e);
+    } finally {
+        btn.disabled = false;
+    }
+}
+</script>
+
+<script>
+(function() {
+    var lightbox = document.getElementById('lightbox');
+    var lightboxImg = document.getElementById('lightboxImg');
+    var allImages = [];
+    var currentIndex = 0;
+
+    // Collect all image URLs
+    var thumbs = document.querySelectorAll('.figurine-thumb');
+    thumbs.forEach(function(t) { allImages.push(t.getAttribute('data-full')); });
+    if (allImages.length === 0) {
+        var main = document.getElementById('mainImage');
+        if (main) allImages.push(main.getAttribute('data-full'));
+    }
+
+    function showLightbox(index) {
+        currentIndex = index;
+        lightboxImg.src = allImages[currentIndex];
+        lightbox.style.display = 'flex';
+    }
+
+    function closeLightbox() {
+        lightbox.style.display = 'none';
+    }
+
+    // Main image click
+    var mainImage = document.getElementById('mainImage');
+    if (mainImage) {
+        mainImage.addEventListener('click', function() {
+            var src = this.src;
+            var idx = allImages.indexOf(src);
+            showLightbox(idx >= 0 ? idx : 0);
+        });
+    }
+
+    // Thumbnail clicks - swap main image AND open lightbox
+    thumbs.forEach(function(thumb, i) {
+        thumb.addEventListener('click', function() {
+            var fullUrl = this.getAttribute('data-full');
+            document.getElementById('mainImage').src = fullUrl;
+            thumbs.forEach(function(t) { t.style.borderColor = 'transparent'; });
+            this.style.borderColor = '#6495ED';
+        });
+    });
+
+    // Lightbox controls
+    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', function(e) {
+        if (e.target === lightbox) closeLightbox();
+    });
+    document.getElementById('lightboxPrev').addEventListener('click', function(e) {
+        e.stopPropagation();
+        currentIndex = (currentIndex - 1 + allImages.length) % allImages.length;
+        lightboxImg.src = allImages[currentIndex];
+    });
+    document.getElementById('lightboxNext').addEventListener('click', function(e) {
+        e.stopPropagation();
+        currentIndex = (currentIndex + 1) % allImages.length;
+        lightboxImg.src = allImages[currentIndex];
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (lightbox.style.display === 'flex') {
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') document.getElementById('lightboxPrev').click();
+            if (e.key === 'ArrowRight') document.getElementById('lightboxNext').click();
+        }
+    });
+})();
+</script>
 
 <%- include('../partials/footer') %>

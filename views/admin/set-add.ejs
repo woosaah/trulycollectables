@@ -1,0 +1,165 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <h2 class="mb-4">Add Set</h2>
+
+    <% if (errors && errors.length > 0) { %>
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            <% errors.forEach(error => { %>
+            <li><%= error.msg %></li>
+            <% }); %>
+        </ul>
+    </div>
+    <% } %>
+
+    <div class="card">
+        <div class="card-body">
+            <form action="/admin/sets/add" method="POST">
+                <div class="mb-3">
+                    <label for="set_name" class="form-label">Set Name *</label>
+                    <input type="text" class="form-control" id="set_name" name="set_name" required>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="manufacturer" class="form-label">Manufacturer</label>
+                        <select class="form-select" id="manufacturer" name="manufacturer">
+                            <option value="">Select or type new...</option>
+                            <% manufacturers.forEach(mfg => { %>
+                            <option value="<%= mfg %>"><%= mfg %></option>
+                            <% }); %>
+                        </select>
+                        <input type="text" class="form-control mt-2" id="manufacturer_custom" placeholder="Or type new manufacturer...">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="year" class="form-label">Year</label>
+                        <input type="number" class="form-control" id="year" name="year" min="1800" max="2100">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="sport_type" class="form-label">Type</label>
+                        <select class="form-select" id="sport_type" name="sport_type">
+                            <option value="">Select or type new...</option>
+                            <% sportTypes.forEach(type => { %>
+                            <option value="<%= type %>"><%= type %></option>
+                            <% }); %>
+                        </select>
+                        <input type="text" class="form-control mt-2" id="sport_type_custom" placeholder="Or type new type...">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="card_category" class="form-label">Category</label>
+                        <select class="form-select" id="card_category" name="card_category">
+                            <option value="">Select category...</option>
+                            <option value="sport">Sport</option>
+                            <option value="non_sport">Non-Sport</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="card_subtype" class="form-label">Card Type</label>
+                        <select class="form-select" id="card_subtype" name="card_subtype">
+                            <option value="">Select or type new...</option>
+                            <% cardSubtypes.forEach(sub => { %>
+                            <option value="<%= sub %>" <%= sub === 'Trading Cards' ? 'selected' : '' %>><%= sub %></option>
+                            <% }); %>
+                        </select>
+                        <input type="text" class="form-control mt-2" id="card_subtype_custom" placeholder="Or type new card type...">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="image_url" class="form-label">Image URL</label>
+                    <input type="text" class="form-control" id="image_url" name="image_url" placeholder="https://...">
+                    <small class="text-muted">Enter a URL to an image representing this set</small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Add Set</button>
+                    <a href="/admin/sets" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('manufacturer_custom').addEventListener('input', function() {
+    if (this.value) {
+        document.getElementById('manufacturer').value = '';
+    }
+});
+
+document.getElementById('manufacturer').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('manufacturer_custom').value = '';
+    }
+});
+
+document.getElementById('sport_type_custom').addEventListener('input', function() {
+    if (this.value) {
+        document.getElementById('sport_type').value = '';
+    }
+});
+
+document.getElementById('sport_type').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('sport_type_custom').value = '';
+    }
+});
+
+document.getElementById('card_subtype_custom').addEventListener('input', function() {
+    if (this.value) {
+        document.getElementById('card_subtype').value = '';
+    }
+});
+
+document.getElementById('card_subtype').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('card_subtype_custom').value = '';
+    }
+});
+
+document.querySelector('form').addEventListener('submit', function() {
+    var mfgSelect = document.getElementById('manufacturer');
+    var customMfg = document.getElementById('manufacturer_custom').value.trim();
+    if (customMfg) {
+        var opt = document.createElement('option');
+        opt.value = customMfg;
+        opt.text = customMfg;
+        opt.selected = true;
+        mfgSelect.appendChild(opt);
+    }
+    var typeSelect = document.getElementById('sport_type');
+    var customType = document.getElementById('sport_type_custom').value.trim();
+    if (customType) {
+        var opt2 = document.createElement('option');
+        opt2.value = customType;
+        opt2.text = customType;
+        opt2.selected = true;
+        typeSelect.appendChild(opt2);
+    }
+    var subtypeSelect = document.getElementById('card_subtype');
+    var customSubtype = document.getElementById('card_subtype_custom').value.trim();
+    if (customSubtype) {
+        var opt3 = document.createElement('option');
+        opt3.value = customSubtype;
+        opt3.text = customSubtype;
+        opt3.selected = true;
+        subtypeSelect.appendChild(opt3);
+    }
+});
+</script>
+
+<%- include('../partials/footer') %>

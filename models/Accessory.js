@@ -7,6 +7,7 @@ const Accessory = {
         return {
             ...accessory,
             price_nzd: accessory.price_nzd ? parseFloat(accessory.price_nzd) : null,
+            society_price: accessory.society_price ? parseFloat(accessory.society_price) : null,
             quantity: accessory.quantity ? parseInt(accessory.quantity) : 0
         };
     },
@@ -18,19 +19,22 @@ const Accessory = {
     // Create a new accessory
     async create(accessoryData) {
         const {
-            product_name, category, description, price_nzd, quantity, image_url, manufacturer
+            product_name, category, description, price_nzd, society_price, quantity, image_url, manufacturer
         } = accessoryData;
+
+        // Default society_price to 10% off retail if not provided
+        const finalSocietyPrice = society_price != null ? society_price : (price_nzd ? (price_nzd * 0.90).toFixed(2) : null);
 
         const query = `
             INSERT INTO accessories (
-                product_name, category, description, price_nzd, quantity, image_url, manufacturer
+                product_name, category, description, price_nzd, society_price, quantity, image_url, manufacturer
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *
         `;
 
         const result = await pool.query(query, [
-            product_name, category, description, price_nzd, quantity, image_url, manufacturer
+            product_name, category, description, price_nzd, finalSocietyPrice, quantity, image_url, manufacturer
         ]);
 
         return this.normalizeAccessory(result.rows[0]);
@@ -166,6 +170,18 @@ const Accessory = {
             SELECT * FROM accessories
             WHERE available = true
             ORDER BY created_at DESC
+            LIMIT $1
+        `;
+        const result = await pool.query(query, [limit]);
+        return this.normalizeAccessories(result.rows);
+    },
+
+    // Get random accessories
+    async getRandom(limit = 6) {
+        const query = `
+            SELECT * FROM accessories
+            WHERE available = true AND quantity > 0
+            ORDER BY RANDOM()
             LIMIT $1
         `;
         const result = await pool.query(query, [limit]);

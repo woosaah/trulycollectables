@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/user/collection" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h2 class="mb-0">Browse Sets</h2>
+    </div>
+
+    <div class="sticky-top bg-white py-2 border-bottom mb-1" style="top: 56px; z-index: 10;">
+        <input type="search" id="setSearch" class="form-control form-control-lg"
+               placeholder="Search sets…" autocomplete="off"
+               oninput="filterSets(this.value)">
+    </div>
+
+    <div id="set-list">
+        <% sets.forEach(set => { %>
+        <a href="/user/collection/sets/<%= encodeURIComponent(set.set_name) %>"
+           class="set-list-item d-flex align-items-center text-decoration-none border-bottom py-3 px-1"
+           data-name="<%= set.set_name.toLowerCase() %>">
+            <div class="flex-grow-1 me-3">
+                <div class="fw-semibold text-dark mb-1"><%= set.set_name %></div>
+                <div class="progress" style="height: 5px;">
+                    <div class="progress-bar <%= set.pct === 100 ? 'bg-success' : 'bg-primary' %>"
+                         style="width: <%= set.pct %>%"></div>
+                </div>
+            </div>
+            <div class="text-muted small me-2" style="white-space: nowrap;">
+                <% if (set.pct === 100) { %>
+                    <i class="bi bi-trophy-fill text-warning"></i> Complete
+                <% } else { %>
+                    <%= set.have %> / <%= set.total %>
+                <% } %>
+            </div>
+            <i class="bi bi-chevron-right text-muted"></i>
+        </a>
+        <% }) %>
+
+        <% if (sets.length === 0) { %>
+        <div class="alert alert-info mt-3">No sets found in the catalogue.</div>
+        <% } %>
+    </div>
+
+    <div id="no-results" class="alert alert-info mt-3 d-none">No sets match your search.</div>
+</div>
+
+<script>
+function filterSets(query) {
+    const q = query.toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('#set-list .set-list-item').forEach(el => {
+        const match = el.dataset.name.includes(q);
+        el.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+    document.getElementById('no-results').classList.toggle('d-none', visible > 0 || q === '');
+}
+</script>
+
+<%- include('../partials/footer') %>

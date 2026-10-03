@@ -35,11 +35,46 @@
         </div>
 
         <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3><%= usersCount %></h3>
+                    <p class="mb-0">Registered Users</p>
+                    <a href="/admin/users" class="btn btn-light mt-3">Manage Users</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
             <div class="card bg-danger text-white">
                 <div class="card-body">
-                    <h3><i class="bi bi-star-fill"></i></h3>
-                    <p class="mb-0">User Wants</p>
-                    <a href="/admin/wants" class="btn btn-light mt-3">View Wants</a>
+                    <h3><%= typeof openTicketsCount !== 'undefined' ? openTicketsCount : 0 %></h3>
+                    <p class="mb-0">Open Tickets</p>
+                    <a href="/admin/tickets" class="btn btn-light mt-3">View Tickets</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 bg-light">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <i class="bi bi-stack text-primary" style="font-size:2rem;"></i>
+                    <div>
+                        <div class="fw-bold fs-4"><%= totalStock.toLocaleString() %></div>
+                        <div class="text-muted small">Cards in stock</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 bg-light">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <i class="bi bi-currency-dollar text-success" style="font-size:2rem;"></i>
+                    <div>
+                        <div class="fw-bold fs-4">NZD $<%= Number(totalValue).toLocaleString('en-NZ', { minimumFractionDigits: 2 }) %></div>
+                        <div class="text-muted small">Total stock value at sale price</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -53,13 +88,22 @@
                     <div class="d-flex flex-wrap gap-2">
                         <a href="/admin/cards" class="btn btn-primary">Manage Cards</a>
                         <a href="/admin/cards/add" class="btn btn-primary">Add Card</a>
+                        <a href="/admin/scan" class="btn btn-success"><i class="bi bi-camera"></i> Scan Cards</a>
+                        <a href="/admin/players" class="btn btn-dark">Manage Players</a>
+                        <a href="/admin/players/import" class="btn btn-dark">Import Players</a>
+                        <a href="/admin/sets" class="btn btn-info">Manage Sets</a>
                         <a href="/admin/accessories" class="btn btn-success">Manage Accessories</a>
+                        <a href="/admin/pending-cards" class="btn btn-warning">
+                            <i class="bi bi-inbox"></i> Pending Submissions
+                        </a>
                         <a href="/admin/wants" class="btn btn-danger">
                             <i class="bi bi-star-fill"></i> User Wants
                         </a>
+                        <a href="/admin/users" class="btn btn-success">Manage Users</a>
                         <a href="/admin/orders" class="btn btn-primary">Manage Orders</a>
                         <a href="/admin/figurines" class="btn btn-primary">Manage Figurines</a>
                         <a href="/admin/inquiries" class="btn btn-primary">Manage Inquiries</a>
+                        <a href="/admin/settings" class="btn btn-secondary"><i class="bi bi-gear"></i> Store Settings</a>
                     </div>
                 </div>
             </div>
@@ -124,11 +168,13 @@
         </h5>
         <p class="mb-2"><strong>Recently Added:</strong></p>
         <ul class="mb-0">
-            <li><strong>Bulk CSV Import</strong> - Import hundreds of cards at once with duplicate detection</li>
+            <li><strong>Card Parallels & Variations</strong> - Define parallels (Rainbow, Pink Foil, etc.) at the set level and they auto-apply to every card. Manage per-card variations with individual pricing, stock, and photos. <a href="/admin/sets" class="alert-link">Manage Sets</a></li>
+            <li><strong>Set Overview</strong> - When editing a set, see a full breakdown of base set sections vs specials/inserts, with card counts per group.</li>
+            <li><strong>Variation Picker on Card Pages</strong> - Customers can select a parallel before adding to cart — price and image update live.</li>
+            <li><strong>Bulk CSV Import</strong> - Import hundreds of cards at once with duplicate detection. Newly imported cards automatically get set parallels applied. <a href="/admin/csv-import" class="alert-link">CSV Import</a></li>
             <li><strong>Multiple Images</strong> - Add up to 10 condition photos per card with lightbox gallery</li>
-            <li><strong>Price History</strong> - Automatic tracking of all price changes</li>
-            <li><strong>Unit Testing</strong> - Run tests after updates to catch bugs early</li>
-            <li><strong>Social Proof</strong> - Track views, sales, and trending cards</li>
+            <li><strong>Collection Tracking</strong> - Customers can mark cards (and specific parallels) as Have / Want from the card detail page</li>
+            <li><strong>Unit Testing</strong> - Run tests after updates to catch bugs early. <a href="/admin/tests" class="alert-link">Run Tests</a></li>
         </ul>
     </div>
 </div>

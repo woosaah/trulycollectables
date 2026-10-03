@@ -1,0 +1,67 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Import Players</h2>
+                <a href="/admin/players/import/template" class="btn btn-outline-primary">
+                    <i class="bi bi-download"></i> Download Template
+                </a>
+            </div>
+
+            <% if (errors && errors.length > 0) { %>
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    <% errors.forEach(error => { %>
+                    <li><%= error.msg %></li>
+                    <% }); %>
+                </ul>
+            </div>
+            <% } %>
+
+            <div class="alert alert-info">
+                <h5 class="alert-heading">Player Import Guide</h5>
+                <ul class="mb-0">
+                    <li><strong>name</strong> is the only required field</li>
+                    <li><strong>born_in_nz</strong> — yes/no/true/false</li>
+                    <li><strong>sports_played</strong> — pipe-separated: <code>Rugby|Cricket|Boxing</code></li>
+                    <li><strong>Representative teams</strong> — yes/no columns for each team</li>
+                    <li>Duplicate players (matched by name) will be <strong>updated</strong> with new data</li>
+                    <li>After importing, use the <a href="/admin/players/match">matching wizard</a> to link players to cards</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="/admin/players/import/upload" method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label for="csv_file" class="form-label"><h5>Select CSV File</h5></label>
+                            <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv,.txt" required>
+                            <div class="form-text">Maximum file size: 10MB</div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-upload"></i> Upload and Preview
+                            </button>
+                            <a href="/admin/players" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header"><h5 class="mb-0">CSV Format Example</h5></div>
+                <div class="card-body">
+                    <pre class="bg-light p-3 rounded" style="font-size: 0.8rem; overflow-x: auto;"><code>name,born_in_nz,sports_played,played_for_all_blacks,played_for_maori,played_for_kiwis,played_for_maori_rl,played_for_black_caps,played_for_white_ferns,played_for_tall_blacks,played_for_other,other_teams,bio
+Beauden Barrett,yes,Rugby,yes,no,no,no,no,no,no,no,,All Blacks first five-eighth
+Kane Williamson,yes,Cricket,no,no,no,no,yes,no,no,no,,Black Caps captain
+"Sonny Bill Williams",yes,"Rugby|Rugby League|Boxing",yes,no,yes,no,no,no,no,no,,Multi-sport athlete</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,138 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <% if (filters.set_name) { %>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/sport-sets">Sport Sets</a></li>
+            <li class="breadcrumb-item active"><%= filters.set_name %></li>
+        </ol>
+    </nav>
+    <% } %>
+    <h2 class="mb-4">Sport Cards<% if (filters.set_name) { %> - <%= filters.set_name %><% } %></h2>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/sport-cards" method="GET" class="row g-3">
+                <% if (filters.set_name) { %><input type="hidden" name="set_name" value="<%= filters.set_name %>"><% } %>
+                <% if (filters.year) { %><input type="hidden" name="year" value="<%= filters.year %>"><% } %>
+                <% if (filters.manufacturer) { %><input type="hidden" name="manufacturer" value="<%= filters.manufacturer %>"><% } %>
+                <% if (filters.condition) { %><input type="hidden" name="condition" value="<%= filters.condition %>"><% } %>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="search" value="<%= filters.search || '' %>" placeholder="Search cards...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="sport_type">
+                        <option value="">All Sports</option>
+                        <% sportTypes.forEach(type => { %>
+                        <option value="<%= type %>" <%= filters.sport_type === type ? 'selected' : '' %>><%= type %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="team" value="<%= filters.team || '' %>" placeholder="Team...">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="sort">
+                        <option value="created_at" <%= filters.sort === 'created_at' ? 'selected' : '' %>>Newest</option>
+                        <option value="price_nzd" <%= filters.sort === 'price_nzd' ? 'selected' : '' %>>Price</option>
+                        <option value="card_name" <%= filters.sort === 'card_name' ? 'selected' : '' %>>Name</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <p class="text-muted"><%= totalCards %> card<%= totalCards !== 1 ? 's' : '' %> found</p>
+
+    <% if (cards.length > 0) { %>
+    <div class="product-grid">
+        <% cards.forEach(card => { %>
+        <a href="/cards/<%= card.id %>" class="text-decoration-none">
+            <div class="card h-100">
+                <% if (card.image_front) { %>
+                <img src="<%= card.image_front %>" class="card-img-top" alt="<%= card.card_name %>">
+                <% } else { %>
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center">
+                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                </div>
+                <% } %>
+                <div class="card-body">
+                    <h6 class="card-title text-dark">
+                        <% if (card.card_number) { %><span class="text-muted me-1">#<%= card.card_number %></span><% } %>
+                        <%= card.card_name %>
+                        <% if (card.is_rookie_card) { %><span class="badge bg-warning text-dark">RC</span><% } %>
+                    </h6>
+                    <p class="text-muted small mb-1"><%= card.set_name || '' %></p>
+                    <% if (card.team) { %><p class="text-muted small mb-1"><%= card.team %></p><% } %>
+                    <% if (card.price_nzd) { %>
+                    <span class="price-tag">$<%= card.price_nzd.toFixed(2) %></span>
+                    <% } else { %>
+                    <span class="badge bg-secondary">Price TBC</span>
+                    <% } %>
+                    <% if (card.quantity > 0) { %>
+                    <p class="mb-0 mt-1 small"><i class="bi bi-circle-fill text-success" style="font-size:0.5rem;vertical-align:middle;"></i> In stock</p>
+                    <% } else { %>
+                    <p class="mb-0 mt-1 small"><i class="bi bi-circle-fill text-danger" style="font-size:0.5rem;vertical-align:middle;"></i> Out of stock</p>
+                    <% } %>
+                </div>
+            </div>
+        </a>
+        <% }); %>
+    </div>
+
+    <% if (totalPages > 1) { %>
+    <%
+        const qs = (p) => {
+            const params = new URLSearchParams();
+            params.set('page', p);
+            if (filters.search) params.set('search', filters.search);
+            if (filters.sport_type) params.set('sport_type', filters.sport_type);
+            if (filters.team) params.set('team', filters.team);
+            if (filters.set_name) params.set('set_name', filters.set_name);
+            if (filters.year) params.set('year', filters.year);
+            if (filters.manufacturer) params.set('manufacturer', filters.manufacturer);
+            if (filters.condition) params.set('condition', filters.condition);
+            if (filters.sort && filters.sort !== 'created_at') params.set('sort', filters.sort);
+            return '?' + params.toString();
+        };
+    %>
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center flex-wrap">
+            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="<%= qs(currentPage - 1) %>">&laquo;</a>
+            </li>
+            <%
+                const window = 2;
+                const pages = [];
+                for (let i = 1; i <= totalPages; i++) {
+                    if (i === 1 || i === totalPages || (i >= currentPage - window && i <= currentPage + window)) {
+                        pages.push(i);
+                    }
+                }
+                let prev = null;
+                for (const p of pages) {
+                    if (prev !== null && p - prev > 1) {
+            %>
+            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            <%  }  %>
+            <li class="page-item <%= currentPage === p ? 'active' : '' %>">
+                <a class="page-link" href="<%= qs(p) %>"><%= p %></a>
+            </li>
+            <%  prev = p; } %>
+            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="<%= qs(currentPage + 1) %>">&raquo;</a>
+            </li>
+        </ul>
+    </nav>
+    <% } %>
+    <% } else { %>
+    <div class="alert alert-info">No sport cards found matching your filters.</div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>

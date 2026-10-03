@@ -70,7 +70,7 @@
                         <tr>
                             <td><%= order.order_number %></td>
                             <td><%= new Date(order.created_at).toLocaleDateString() %></td>
-                            <td>NZD $<%= order.total_nzd.toFixed(2) %></td>
+                            <td>NZD $<%= parseFloat(order.total_nzd).toFixed(2) %></td>
                             <td>
                                 <span class="badge badge-<%= order.status %>"><%= order.status %></span>
                             </td>
