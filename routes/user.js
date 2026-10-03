@@ -8,6 +8,7 @@ const Cart = require('../models/Cart');
 const Order = require('../models/Order');
 const Inquiry = require('../models/Inquiry');
 const Settings = require('../models/Settings');
+const WantedList = require('../services/wantedList');
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
 const path = require('path');
@@ -224,6 +225,51 @@ router.get('/collection/sets/:set', async (req, res) => {
     } catch (err) {
         console.error('Collection set checklist error:', err);
         res.render('public/error', { title: 'Error', message: 'Unable to load set checklist' });
+    }
+});
+
+// Wanted list — printable PDF / shareable text for card shows
+const wantedListParams = query => ({
+    filters: {
+        set: (query.set || '').trim() || null,
+        sport: (query.sport || '').trim() || null,
+        q: (query.q || '').trim().slice(0, 100) || null
+    },
+    mode: query.mode === 'numbers' ? 'numbers' : 'names'
+});
+
+router.get('/collection/wanted-list', async (req, res) => {
+    try {
+        const { filters, mode } = wantedListParams(req.query);
+        const [rows, options] = await Promise.all([
+            WantedList.fetch(req.session.user.id, filters),
+            WantedList.filterOptions(req.session.user.id)
+        ]);
+        const groups = WantedList.group(rows);
+        res.render('user/wanted-list', {
+            title: 'Wanted List',
+            groups, filters, mode, options,
+            total: rows.length,
+            text: WantedList.toText(groups, mode, req.session.user.username),
+            query: new URLSearchParams(Object.entries({ ...filters, mode }).filter(([, v]) => v)).toString()
+        });
+    } catch (err) {
+        console.error('Wanted list error:', err);
+        res.render('public/error', { title: 'Error', message: 'Unable to load wanted list' });
+    }
+});
+
+router.get('/collection/wanted-list.pdf', async (req, res) => {
+    try {
+        const { filters, mode } = wantedListParams(req.query);
+        const groups = WantedList.group(await WantedList.fetch(req.session.user.id, filters));
+        const label = [filters.set, filters.sport, filters.q && `"${filters.q}"`].filter(Boolean).join(' · ');
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="wanted-list-${new Date().toISOString().slice(0, 10)}.pdf"`);
+        WantedList.toPdf(groups, mode, res, { owner: req.session.user.username, filtersLabel: label });
+    } catch (err) {
+        console.error('Wanted list PDF error:', err);
+        if (!res.headersSent) res.status(500).send('Unable to generate PDF');
     }
 });
 

@@ -10,6 +10,11 @@
             <a href="/user/collection/export?status=<%= status %>" class="btn btn-outline-primary">
                 <i class="bi bi-download"></i> Export CSV
             </a>
+            <% if (status === 'want') { %>
+            <a href="/user/collection/wanted-list" class="btn btn-success">
+                <i class="bi bi-file-earmark-pdf"></i> Wanted list / PDF
+            </a>
+            <% } %>
         </div>
     </div>
 

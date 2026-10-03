@@ -1,0 +1,119 @@
+<%- include('../partials/header') %>
+
+<div class="container my-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="mb-0">Wanted List</h2>
+        <a href="/user/collection?status=want" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Cards I Want
+        </a>
+    </div>
+
+    <form method="GET" action="/user/collection/wanted-list" class="card card-body mb-3">
+        <div class="row g-2">
+            <div class="col-md-4">
+                <label class="form-label small mb-1" for="wl-set">Set</label>
+                <select class="form-select" id="wl-set" name="set">
+                    <option value="">All sets</option>
+                    <% options.sets.forEach(s => { %>
+                    <option value="<%= s %>" <%= filters.set === s ? 'selected' : '' %>><%= s %></option>
+                    <% }) %>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small mb-1" for="wl-sport">Sport / type</label>
+                <select class="form-select" id="wl-sport" name="sport">
+                    <option value="">All</option>
+                    <% options.sports.forEach(s => { %>
+                    <option value="<%= s %>" <%= filters.sport === s ? 'selected' : '' %>><%= s %></option>
+                    <% }) %>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small mb-1" for="wl-q">Search</label>
+                <input type="search" class="form-control" id="wl-q" name="q" value="<%= filters.q || '' %>" placeholder="Name or #">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1 d-block">Format</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="mode" id="mode-names" value="names" <%= mode === 'names' ? 'checked' : '' %>>
+                    <label class="btn btn-outline-primary" for="mode-names">Names</label>
+                    <input type="radio" class="btn-check" name="mode" id="mode-numbers" value="numbers" <%= mode === 'numbers' ? 'checked' : '' %>>
+                    <label class="btn btn-outline-primary" for="mode-numbers">#s</label>
+                </div>
+            </div>
+        </div>
+        <div class="mt-2">
+            <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+            <% if (filters.set || filters.sport || filters.q) { %>
+            <a href="/user/collection/wanted-list?mode=<%= mode %>" class="btn btn-link btn-sm">Clear filters</a>
+            <% } %>
+        </div>
+    </form>
+
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <a href="/user/collection/wanted-list.pdf?<%= query %>" class="btn btn-success" id="wl-pdf">
+            <i class="bi bi-file-earmark-pdf"></i> Download PDF
+        </a>
+        <button type="button" class="btn btn-outline-primary" id="wl-copy">
+            <i class="bi bi-clipboard"></i> <span>Copy text</span>
+        </button>
+        <button type="button" class="btn btn-outline-primary d-none" id="wl-share">
+            <i class="bi bi-share"></i> Share
+        </button>
+        <span class="text-muted small ms-auto"><%= total %> card<%= total === 1 ? '' : 's' %> in <%= groups.length %> set<%= groups.length === 1 ? '' : 's' %></span>
+    </div>
+
+    <% if (!total) { %>
+    <div class="alert alert-info">No wanted cards match these filters.</div>
+    <% } else { %>
+    <textarea id="wl-text" class="form-control font-monospace small" rows="18" readonly><%= text %></textarea>
+    <% } %>
+</div>
+
+<script>
+(function () {
+    const text = <%- JSON.stringify(text).replace(/</g, '\\u003c') %>;
+    const pdfUrl = document.getElementById('wl-pdf').href;
+    const copyBtn = document.getElementById('wl-copy');
+    const shareBtn = document.getElementById('wl-share');
+
+    // Format toggle applies immediately
+    document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', () => r.form.submit()));
+
+    copyBtn.addEventListener('click', async () => {
+        let ok = false;
+        try {
+            await navigator.clipboard.writeText(text);
+            ok = true;
+        } catch (e) {
+            // Clipboard API needs https; fall back to selecting the textarea
+            const ta = document.getElementById('wl-text');
+            if (ta) { ta.select(); ok = document.execCommand('copy'); }
+        }
+        copyBtn.querySelector('span').textContent = ok ? 'Copied!' : 'Select the text below to copy';
+        setTimeout(() => { copyBtn.querySelector('span').textContent = 'Copy text'; }, 2000);
+    });
+
+    if (navigator.share) {
+        shareBtn.classList.remove('d-none');
+        shareBtn.addEventListener('click', async () => {
+            try {
+                // Prefer sharing the PDF itself where the device supports file sharing
+                const blob = await (await fetch(pdfUrl)).blob();
+                const file = new File([blob], 'wanted-list.pdf', { type: 'application/pdf' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Wanted list' });
+                } else {
+                    await navigator.share({ title: 'Wanted list', text });
+                }
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    try { await navigator.share({ title: 'Wanted list', text }); } catch (_) {}
+                }
+            }
+        });
+    }
+})();
+</script>
+
+<%- include('../partials/footer') %>
