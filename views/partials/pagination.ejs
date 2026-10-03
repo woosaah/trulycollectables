@@ -1,0 +1,28 @@
+<%
+    // Usage: include('../partials/pagination', { currentPage, totalPages, hrefFor: p => '?page=' + p })
+    const cur = parseInt(currentPage) || 1;
+    const last = parseInt(totalPages) || 1;
+    const span = 2;
+    const pages = [];
+    for (let i = 1; i <= last; i++) {
+        if (i === 1 || i === last || (i >= cur - span && i <= cur + span)) pages.push(i);
+    }
+%>
+<% if (last > 1) { %>
+    <ul class="pagination pagination-compact justify-content-center flex-wrap">
+        <li class="page-item <%= cur <= 1 ? 'disabled' : '' %>">
+            <a class="page-link" href="<%= cur <= 1 ? '#' : hrefFor(cur - 1) %>" aria-label="Previous">&laquo;</a>
+        </li>
+        <% let prev = null; for (const p of pages) { %>
+            <% if (prev !== null && p - prev > 1) { %>
+            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            <% } %>
+            <li class="page-item <%= cur === p ? 'active' : '' %>">
+                <a class="page-link" href="<%= hrefFor(p) %>"><%= p %></a>
+            </li>
+        <% prev = p; } %>
+        <li class="page-item <%= cur >= last ? 'disabled' : '' %>">
+            <a class="page-link" href="<%= cur >= last ? '#' : hrefFor(cur + 1) %>" aria-label="Next">&raquo;</a>
+        </li>
+    </ul>
+<% } %>

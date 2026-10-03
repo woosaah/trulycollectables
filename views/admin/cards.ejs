@@ -133,13 +133,7 @@
 
     <% if (totalPages > 1) { %>
     <nav>
-        <ul class="pagination">
-            <% for (let i = 1; i <= totalPages; i++) { %>
-            <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                <a class="page-link" href="?page=<%= i %><%= filters.search ? '&search=' + encodeURIComponent(filters.search) : '' %><%= filters.card_category ? '&card_category=' + encodeURIComponent(filters.card_category) : '' %><%= filters.sport_type ? '&sport_type=' + encodeURIComponent(filters.sport_type) : '' %><%= filters.set_name ? '&set_name=' + encodeURIComponent(filters.set_name) : '' %>&limit=<%= limit %>&sort=<%= filters.sort %>&order=<%= filters.order %>"><%= i %></a>
-            </li>
-            <% } %>
-        </ul>
+        <%- include('../partials/pagination', { currentPage, totalPages, hrefFor: p => '?page=' + (p) + (filters.search ? '&search=' + encodeURIComponent(filters.search) : '') + (filters.card_category ? '&card_category=' + encodeURIComponent(filters.card_category) : '') + (filters.sport_type ? '&sport_type=' + encodeURIComponent(filters.sport_type) : '') + (filters.set_name ? '&set_name=' + encodeURIComponent(filters.set_name) : '') + '&limit=' + (limit) + '&sort=' + (filters.sort) + '&order=' + (filters.order) }) %>
     </nav>
     <% } %>
     <% } else { %>

@@ -102,32 +102,7 @@
         };
     %>
     <nav class="mt-4">
-        <ul class="pagination justify-content-center flex-wrap">
-            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-                <a class="page-link" href="<%= qs(currentPage - 1) %>">&laquo;</a>
-            </li>
-            <%
-                const window = 2;
-                const pages = [];
-                for (let i = 1; i <= totalPages; i++) {
-                    if (i === 1 || i === totalPages || (i >= currentPage - window && i <= currentPage + window)) {
-                        pages.push(i);
-                    }
-                }
-                let prev = null;
-                for (const p of pages) {
-                    if (prev !== null && p - prev > 1) {
-            %>
-            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
-            <%  }  %>
-            <li class="page-item <%= currentPage === p ? 'active' : '' %>">
-                <a class="page-link" href="<%= qs(p) %>"><%= p %></a>
-            </li>
-            <%  prev = p; } %>
-            <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
-                <a class="page-link" href="<%= qs(currentPage + 1) %>">&raquo;</a>
-            </li>
-        </ul>
+        <%- include('../partials/pagination', { currentPage, totalPages, hrefFor: p => (qs(p)) }) %>
     </nav>
     <% } %>
     <% } else { %>
