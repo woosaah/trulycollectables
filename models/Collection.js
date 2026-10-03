@@ -153,11 +153,13 @@ const Collection = {
                 c.image_front
             FROM user_collections uc
             INNER JOIN cards c ON
-                LOWER(uc.card_name) = LOWER(c.card_name)
+                uc.card_id = c.id
+                OR (uc.card_id IS NULL
+                AND LOWER(uc.card_name) = LOWER(c.card_name)
                 AND (uc.set_name IS NULL OR LOWER(uc.set_name) = LOWER(c.set_name))
                 AND (uc.card_number IS NULL OR uc.card_number = c.card_number)
                 AND (uc.manufacturer IS NULL OR LOWER(uc.manufacturer) = LOWER(c.manufacturer))
-                AND (uc.insert_list IS NULL OR LOWER(uc.insert_list) = LOWER(c.insert_list))
+                AND (uc.insert_list IS NULL OR LOWER(uc.insert_list) = LOWER(c.insert_list)))
             WHERE uc.user_id = $1
                 AND uc.status = 'want'
                 AND c.available = true
