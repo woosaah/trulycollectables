@@ -6,3 +6,19 @@ uploads/
 askpass.sh
 *.png
 tests/screenshots/
+.gstack/
+
+# Secrets / credentials
+token
+ebay
+ebayprod
+
+# Generated
+coverage/
+
+# F1 scraper venv + archive
+F1cards/f1_scraper_env/
+F1cards/files.zip
+
+# One-off DB poking scripts
+investigate*.js
