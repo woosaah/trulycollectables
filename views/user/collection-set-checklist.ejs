@@ -62,20 +62,56 @@
 
         /* --- Card rows --- */
         .card-row {
-            display: flex;
-            align-items: center;
             padding: 0.6rem 1rem;
             border-bottom: 1px solid #1e1e1e;
-            min-height: 64px;
+            transition: background 0.1s;
+        }
+        .card-main {
+            display: flex;
+            align-items: center;
+            min-height: 52px;
             cursor: pointer;
             touch-action: manipulation;
             user-select: none;
-            transition: background 0.1s;
         }
-        .card-row:active { background: #1c1c1c; }
+        .card-main:active { opacity: 0.8; }
         .card-row.is-have { background: #0a2416; }
-        .card-row.is-have:active { background: #0d2e1c; }
-        .card-row.row-loading { opacity: 0.6; pointer-events: none; }
+        .card-row.row-loading .card-main { opacity: 0.6; pointer-events: none; }
+
+        /* --- Parallel chips --- */
+        .var-strip { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.1rem 56px; }
+        .var-chip {
+            --chip: #888;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            min-height: 36px;
+            padding: 0 0.8rem;
+            border-radius: 18px;
+            border: 1.5px solid var(--chip);
+            background: transparent;
+            color: var(--chip);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: capitalize;
+            cursor: pointer;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        .var-chip .bi { display: none; }
+        .var-chip.is-have { background: var(--chip); color: #111; }
+        .var-chip.is-have .bi { display: inline; }
+        .var-chip.chip-loading { opacity: 0.5; pointer-events: none; }
+        .var-chip[data-tone="red"]    { --chip: #e5534b; }
+        .var-chip[data-tone="blue"]   { --chip: #4c8dff; }
+        .var-chip[data-tone="pink"]   { --chip: #f07ab8; }
+        .var-chip[data-tone="silver"] { --chip: #c0c6cc; }
+        .var-chip[data-tone="gold"]   { --chip: #e3b341; }
+        .var-chip[data-tone="green"]  { --chip: #3fb950; }
+        .var-chip[data-tone="purple"] { --chip: #a371f7; }
+        .var-chip[data-tone="orange"] { --chip: #f0883e; }
+        .var-chip[data-tone="black"]  { --chip: #8b949e; }
+        #var-progress { font-size: 0.75rem; color: #888; margin: -0.3rem 0 0.6rem; }
 
         /* --- Thumbnail --- */
         .card-thumb {
@@ -154,10 +190,17 @@
         <div id="progress-bar-inner" style="width: <%= total > 0 ? Math.round(have / total * 100) : 0 %>%"></div>
     </div>
 
+    <% if (varTotal > 0) { %>
+    <div id="var-progress">Parallels: <span id="var-have-label"><%= varHave %></span> / <%= varTotal %></div>
+    <% } %>
+
     <div class="filter-tabs">
         <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
         <button class="filter-tab" onclick="setFilter('have', this)">Have</button>
         <button class="filter-tab" onclick="setFilter('missing', this)">Missing</button>
+        <% if (varTotal > 0) { %>
+        <button class="filter-tab" onclick="setFilter('parallels', this)">Parallels</button>
+        <% } %>
     </div>
 
     <input type="search" id="card-search" placeholder="Search by # or name…"
@@ -171,8 +214,8 @@
          data-card-id="<%= card.id %>"
          data-has="<%= card.user_has ? '1' : '0' %>"
          data-number="<%= (card.card_number || '').toLowerCase() %>"
-         data-name="<%= card.card_name.toLowerCase() %>"
-         onclick="toggleCard(this)">
+         data-name="<%= card.card_name.toLowerCase() %>">
+      <div class="card-main" onclick="toggleCard(this.parentElement)">
 
         <% if (card.image_front) { %>
         <img src="<%= card.image_front %>" class="card-thumb" alt="" loading="lazy">
@@ -189,6 +232,20 @@
         <div class="card-check">
             <% if (card.user_has) { %><i class="bi bi-check-lg"></i><% } %>
         </div>
+      </div>
+        <% if (card.variations.length) { %>
+        <div class="var-strip">
+            <% card.variations.forEach(v => {
+                 const tone = (v.name.toLowerCase().match(/red|blue|pink|silver|gold|green|purple|orange|black/) || [''])[0];
+                 const label = v.name.replace(/\s*parallel$/i, ''); %>
+            <button type="button" class="var-chip <%= v.user_has ? 'is-have' : '' %>"
+                    data-var-id="<%= v.id %>" data-has="<%= v.user_has ? '1' : '0' %>" data-tone="<%= tone %>"
+                    onclick="toggleVariation(this)">
+                <i class="bi bi-check-lg"></i><%= label %>
+            </button>
+            <% }) %>
+        </div>
+        <% } %>
     </div>
     <% }) %>
 </div>
@@ -203,6 +260,37 @@ const csrfToken = '<%= locals.csrfToken || "" %>';
 let haveCount = <%= have %>;
 const totalCount = <%= total %>;
 let currentFilter = 'all';
+let varHaveCount = <%= varHave %>;
+
+async function toggleVariation(chip) {
+    if (chip.classList.contains('chip-loading')) return;
+    const row = chip.closest('.card-row');
+    const wasHave = chip.dataset.has === '1';
+    chip.classList.add('chip-loading');
+
+    try {
+        const res = await fetch('/user/collection/toggle/' + row.dataset.cardId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+            body: JSON.stringify({ _csrf: csrfToken, variation_id: chip.dataset.varId })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error('Toggle failed');
+
+        chip.dataset.has = data.active ? '1' : '0';
+        chip.classList.toggle('is-have', data.active);
+        if (data.active && !wasHave) varHaveCount++;
+        if (!data.active && wasHave) varHaveCount--;
+        document.getElementById('var-have-label').textContent = varHaveCount;
+
+        if (currentFilter === 'parallels' && data.active) setTimeout(applyFilters, 900);
+        else applyFilters();
+    } catch (err) {
+        console.error('Variation toggle error:', err);
+    } finally {
+        chip.classList.remove('chip-loading');
+    }
+}
 
 async function toggleCard(row) {
     if (row.classList.contains('row-loading')) return;
@@ -271,7 +359,8 @@ function applyFilters() {
         const has = row.dataset.has === '1';
         const passFilter = currentFilter === 'all' ||
             (currentFilter === 'have' && has) ||
-            (currentFilter === 'missing' && !has);
+            (currentFilter === 'missing' && !has) ||
+            (currentFilter === 'parallels' && row.querySelector('.var-chip[data-has="0"]'));
         const passSearch = !q || row.dataset.number.includes(q) || row.dataset.name.includes(q);
         const show = passFilter && passSearch;
         row.style.display = show ? '' : 'none';

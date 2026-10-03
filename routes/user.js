@@ -208,9 +208,12 @@ router.get('/collection/sets/:set', async (req, res) => {
         const cards = await Collection.getSetCards(req.session.user.id, setName);
         if (!cards.length) return res.status(404).render('public/error', { title: 'Not Found', message: 'Set not found or has no available cards' });
         const have = cards.filter(c => c.user_has).length;
+        const allVariations = cards.flatMap(c => c.variations);
         res.render('user/collection-set-checklist', {
             title: `${setName} Checklist`,
-            setName, cards, have, total: cards.length
+            setName, cards, have, total: cards.length,
+            varHave: allVariations.filter(v => v.user_has).length,
+            varTotal: allVariations.length
         });
     } catch (err) {
         console.error('Collection set checklist error:', err);

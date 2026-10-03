@@ -429,10 +429,32 @@ const Collection = {
                 CAST(NULLIF(regexp_replace(c.card_number, '[^0-9]', '', 'g'), '') AS INTEGER) ASC NULLS LAST
         `;
         const result = await pool.query(query, [userId, setName]);
+
+        // Parallels for every card in the set, with the user's have-state per variation
+        const varResult = await pool.query(`
+            SELECT
+                v.id, v.card_id, v.variation_name,
+                EXISTS(
+                    SELECT 1 FROM user_collections uc
+                    WHERE uc.card_id = v.card_id AND uc.variation_id = v.id
+                      AND uc.user_id = $1 AND uc.status = 'have'
+                ) AS user_has
+            FROM card_variations v
+            JOIN cards c ON c.id = v.card_id
+            WHERE c.available = true AND c.set_name = $2
+            ORDER BY v.sort_order, v.variation_name
+        `, [userId, setName]);
+
+        const variationsByCard = {};
+        for (const v of varResult.rows) {
+            (variationsByCard[v.card_id] ||= []).push({ id: v.id, name: v.variation_name, user_has: !!v.user_has });
+        }
+
         return result.rows.map(row => ({
             ...row,
             user_has: !!row.user_has,
             user_wants: !!row.user_wants,
+            variations: variationsByCard[row.id] || [],
         }));
     }
 };
