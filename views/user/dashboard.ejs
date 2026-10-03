@@ -32,6 +32,29 @@
         </div>
     </div>
 
+    <% if (inTransit && inTransit.length > 0) { %>
+    <!-- In Transit -->
+    <div class="card mb-4 border-warning">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="card-title mb-0"><i class="bi bi-truck"></i> In Transit (<%= inTransit.length %>)</h5>
+                <a href="/user/collection?status=have&ownership=in_transit" class="btn btn-sm btn-outline-warning">View all</a>
+            </div>
+            <ul class="list-unstyled mb-0">
+                <% inTransit.slice(0, 5).forEach(item => { %>
+                <li class="d-flex justify-content-between py-1 border-bottom">
+                    <span>
+                        <strong><%= item.card_name %></strong>
+                        <span class="text-muted small"><%= item.set_name || '' %><%= item.card_number ? ' #' + item.card_number : '' %></span>
+                    </span>
+                    <a href="/user/collection/<%= item.id %>/edit" class="small">Mark arrived</a>
+                </li>
+                <% }) %>
+            </ul>
+        </div>
+    </div>
+    <% } %>
+
     <!-- Quick Actions -->
     <div class="row mb-4">
         <div class="col-md-12">

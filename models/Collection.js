@@ -1,6 +1,27 @@
 const pool = require('../config/database');
 
+const CONDITIONS = {
+    mint: 'Mint',
+    near_mint: 'Near Mint',
+    excellent: 'Excellent',
+    good: 'Good',
+    played: 'Played'
+};
+
+const OWNERSHIP_STATUSES = {
+    in_collection: 'In Collection',
+    in_transit: 'In Transit',
+    for_sale: 'For Sale / Trade',
+    sold: 'Sold'
+};
+
+const GRADE_COMPANIES = ['PSA', 'BGS', 'CGC', 'SGC', 'TAG', 'Other'];
+
 const Collection = {
+    CONDITIONS,
+    OWNERSHIP_STATUSES,
+    GRADE_COMPANIES,
+
     // Add card to user collection
     async add(userId, cardData) {
         const {
@@ -57,7 +78,7 @@ const Collection = {
     },
 
     // Get user's collection
-    async findByUser(userId, status = null) {
+    async findByUser(userId, status = null, ownershipStatus = null) {
         let query = `
             SELECT uc.*,
                 pc.image_front as pending_image_front,
@@ -71,8 +92,12 @@ const Collection = {
         const params = [userId];
 
         if (status) {
-            query += ' AND uc.status = $2';
             params.push(status);
+            query += ` AND uc.status = $${params.length}`;
+        }
+        if (ownershipStatus && OWNERSHIP_STATUSES[ownershipStatus]) {
+            params.push(ownershipStatus);
+            query += ` AND uc.ownership_status = $${params.length}`;
         }
 
         query += ' ORDER BY uc.created_at DESC';
@@ -88,19 +113,19 @@ const Collection = {
         return result.rows[0];
     },
 
-    // Update collection item
+    // Update collection item — only whitelisted columns are ever written
     async update(id, userId, updates) {
+        const clean = this.sanitizeUpdate(updates);
         const fields = [];
         const values = [];
         let paramCount = 1;
 
-        for (const [key, value] of Object.entries(updates)) {
-            if (key !== 'id' && key !== 'user_id') {
-                fields.push(`${key} = $${paramCount}`);
-                values.push(value);
-                paramCount++;
-            }
+        for (const [key, value] of Object.entries(clean)) {
+            fields.push(`${key} = $${paramCount}`);
+            values.push(value);
+            paramCount++;
         }
+        if (!fields.length) return this.findById(id, userId);
 
         values.push(id, userId);
         const query = `
@@ -112,6 +137,66 @@ const Collection = {
 
         const result = await pool.query(query, values);
         return result.rows[0];
+    },
+
+    // Turn raw form input into a safe set of column updates
+    sanitizeUpdate(input) {
+        const text = (v, max) => {
+            const s = (v == null ? '' : String(v)).trim();
+            return s ? s.slice(0, max) : null;
+        };
+        const out = {};
+        const has = key => Object.prototype.hasOwnProperty.call(input, key);
+
+        for (const [key, max] of [['card_name', 255], ['set_name', 255], ['card_number', 50], ['sport_type', 50], ['notes', 2000], ['cert_number', 50]]) {
+            if (has(key)) out[key] = text(input[key], max);
+        }
+        if (has('card_name') && !out.card_name) delete out.card_name; // NOT NULL column
+
+        if (has('year')) {
+            const y = parseInt(input.year);
+            out.year = Number.isInteger(y) && y > 1800 && y < 2200 ? y : null;
+        }
+        if (has('quantity')) {
+            const q = parseInt(input.quantity);
+            out.quantity = Number.isInteger(q) && q > 0 ? q : 1;
+        }
+        if (has('status') && ['have', 'want'].includes(input.status)) out.status = input.status;
+        if (has('condition')) out.condition = CONDITIONS[input.condition] ? input.condition : null;
+        if (has('ownership_status')) {
+            out.ownership_status = OWNERSHIP_STATUSES[input.ownership_status] ? input.ownership_status : 'in_collection';
+        }
+        if (has('price_paid')) {
+            const p = parseFloat(input.price_paid);
+            out.price_paid = Number.isFinite(p) && p >= 0 ? Math.round(p * 100) / 100 : null;
+        }
+        if (has('date_purchased')) {
+            out.date_purchased = /^\d{4}-\d{2}-\d{2}$/.test(input.date_purchased || '') ? input.date_purchased : null;
+        }
+
+        // Grading: a checkbox only submits when ticked, so the form sends a hidden is_graded=0 first
+        if (has('is_graded')) {
+            const v = [].concat(input.is_graded).pop();
+            out.is_graded = v === '1' || v === 'on' || v === true;
+            if (out.is_graded) {
+                out.grade_company = GRADE_COMPANIES.includes(input.grade_company) ? input.grade_company : null;
+                out.grade_value = text(input.grade_value, 10);
+                out.cert_number = text(input.cert_number, 50);
+            } else {
+                out.grade_company = out.grade_value = out.cert_number = null;
+            }
+        }
+        return out;
+    },
+
+    async getInTransit(userId) {
+        const result = await pool.query(
+            `SELECT * FROM user_collections
+             WHERE user_id = $1 AND status = 'have' AND ownership_status = 'in_transit'
+             ORDER BY date_purchased DESC NULLS LAST, created_at DESC`,
+            [userId]
+        );
+        return result.rows;
     },
 
     // Delete collection item

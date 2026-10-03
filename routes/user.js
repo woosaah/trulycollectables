@@ -37,12 +37,14 @@ router.get('/dashboard', async (req, res) => {
         const recentOrders = await Order.findByUser(req.session.user.id);
         const cartItems = await Cart.getByUser(req.session.user.id);
         const matches = await Collection.findMatches(req.session.user.id);
+        const inTransit = await Collection.getInTransit(req.session.user.id);
 
         res.render('user/dashboard', {
             title: 'My Dashboard',
             recentOrders: recentOrders.slice(0, 5),
             cartCount: cartItems.length,
-            matchesCount: matches.length
+            matchesCount: matches.length,
+            inTransit
         });
     } catch (error) {
         console.error('Dashboard error:', error);
@@ -58,10 +60,11 @@ router.get('/dashboard', async (req, res) => {
 // View collection
 router.get('/collection', async (req, res) => {
     try {
-        const status = req.query.status || 'have';
+        const status = req.query.status === 'want' ? 'want' : 'have';
+        const ownership = status === 'have' && Collection.OWNERSHIP_STATUSES[req.query.ownership] ? req.query.ownership : null;
         const [collection, figurines, completionStats] = await Promise.all([
-            Collection.findByUser(req.session.user.id, status),
-            Collection.getFigurinesByUser(req.session.user.id, status),
+            Collection.findByUser(req.session.user.id, status, ownership),
+            ownership ? Promise.resolve([]) : Collection.getFigurinesByUser(req.session.user.id, status),
             status === 'have' ? Collection.getCompletionStats(req.session.user.id) : Promise.resolve({}),
         ]);
 
@@ -70,7 +73,10 @@ router.get('/collection', async (req, res) => {
             collection,
             figurines,
             status,
-            completionStats
+            ownership,
+            completionStats,
+            ownershipStatuses: Collection.OWNERSHIP_STATUSES,
+            conditions: Collection.CONDITIONS
         });
     } catch (error) {
         console.error('Collection error:', error);
@@ -236,6 +242,9 @@ router.get('/collection/:id/edit', async (req, res) => {
             title: 'Edit Collection Item',
             item,
             sportTypes,
+            conditions: Collection.CONDITIONS,
+            ownershipStatuses: Collection.OWNERSHIP_STATUSES,
+            gradeCompanies: Collection.GRADE_COMPANIES,
             errors: []
         });
     } catch (error) {
@@ -247,8 +256,8 @@ router.get('/collection/:id/edit', async (req, res) => {
 // Update collection item
 router.post('/collection/:id/edit', async (req, res) => {
     try {
-        await Collection.update(req.params.id, req.session.user.id, req.body);
-        res.redirect('/user/collection?status=' + req.body.status);
+        const item = await Collection.update(req.params.id, req.session.user.id, req.body);
+        res.redirect('/user/collection?status=' + (item && item.status === 'want' ? 'want' : 'have'));
     } catch (error) {
         console.error('Update collection error:', error);
         res.redirect('/user/collection');

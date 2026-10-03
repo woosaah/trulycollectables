@@ -37,7 +37,21 @@
         </li>
     </ul>
 
-    <% if (status === 'have' && completionStats && Object.keys(completionStats).length > 0) { %>
+    <% if (status === 'have') { %>
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="/user/collection?status=have" class="btn btn-sm <%= !ownership ? 'btn-primary' : 'btn-outline-secondary' %>">All</a>
+        <% Object.entries(ownershipStatuses).forEach(([value, label]) => { %>
+        <a href="/user/collection?status=have&ownership=<%= value %>"
+           class="btn btn-sm <%= ownership === value ? 'btn-primary' : 'btn-outline-secondary' %>"><%= label %></a>
+        <% }) %>
+        <% const paidTotal = collection.reduce((sum, i) => sum + (i.price_paid ? parseFloat(i.price_paid) * (i.quantity || 1) : 0), 0); %>
+        <% if (paidTotal > 0) { %>
+        <span class="ms-auto align-self-center small text-muted">Paid: NZD $<%= paidTotal.toFixed(2) %></span>
+        <% } %>
+    </div>
+    <% } %>
+
+    <% if (status === 'have' && !ownership && completionStats && Object.keys(completionStats).length > 0) { %>
     <% Object.entries(completionStats).forEach(([setName, setData]) => { %>
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -122,6 +136,7 @@
                     <th>Year</th>
                     <th>Type</th>
                     <th>Qty</th>
+                    <% if (status === 'have') { %><th>Details</th><% } %>
                     <th>Notes</th>
                     <th>Actions</th>
                 </tr>
@@ -135,6 +150,18 @@
                     <td><%= item.year || '-' %></td>
                     <td><%= item.sport_type || '-' %></td>
                     <td><%= item.quantity %></td>
+                    <% if (status === 'have') { %>
+                    <td class="small">
+                        <% if (item.is_graded) { %>
+                        <span class="badge bg-dark" title="<%= item.cert_number ? 'Cert ' + item.cert_number : '' %>"><%= item.grade_company || 'Graded' %> <%= item.grade_value || '' %></span>
+                        <% } %>
+                        <% if (item.ownership_status && item.ownership_status !== 'in_collection') { %>
+                        <span class="badge <%= { in_transit: 'bg-warning text-dark', for_sale: 'bg-info text-dark', sold: 'bg-secondary' }[item.ownership_status] %>"><%= ownershipStatuses[item.ownership_status] %></span>
+                        <% } %>
+                        <% if (item.condition && !item.is_graded) { %><span class="text-muted"><%= conditions[item.condition] %></span><% } %>
+                        <% if (item.price_paid != null) { %><div class="text-muted">Paid $<%= parseFloat(item.price_paid).toFixed(2) %></div><% } %>
+                    </td>
+                    <% } %>
                     <td class="small text-muted"><%= item.notes || '-' %></td>
                     <td>
                         <a href="/user/collection/<%= item.id %>/edit" class="btn btn-sm btn-outline-primary">

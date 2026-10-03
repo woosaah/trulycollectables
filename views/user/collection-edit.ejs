@@ -8,6 +8,7 @@
             <div class="card">
                 <div class="card-body">
                     <form action="/user/collection/<%= item.id %>/edit" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
                         <div class="mb-3">
                             <label for="card_name" class="form-label">Card Name *</label>
                             <input type="text" class="form-control" id="card_name" name="card_name"
@@ -65,6 +66,77 @@
                             </div>
                         </div>
 
+                        <fieldset id="owned-details" class="border rounded p-3 mb-3 <%= item.status === 'want' ? 'd-none' : '' %>">
+                            <legend class="float-none w-auto px-2 fs-6 mb-0">Owned card details</legend>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="ownership_status" class="form-label">Where is it?</label>
+                                    <select class="form-select" id="ownership_status" name="ownership_status">
+                                        <% Object.entries(ownershipStatuses).forEach(([value, label]) => { %>
+                                        <option value="<%= value %>" <%= item.ownership_status === value ? 'selected' : '' %>><%= label %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="condition" class="form-label">Condition</label>
+                                    <select class="form-select" id="condition" name="condition">
+                                        <option value="">Not set</option>
+                                        <% Object.entries(conditions).forEach(([value, label]) => { %>
+                                        <option value="<%= value %>" <%= item.condition === value ? 'selected' : '' %>><%= label %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="price_paid" class="form-label">Price paid (NZD)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="price_paid" name="price_paid"
+                                               step="0.01" min="0" inputmode="decimal"
+                                               value="<%= item.price_paid != null ? item.price_paid : '' %>">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="date_purchased" class="form-label">Date purchased</label>
+                                    <input type="date" class="form-control" id="date_purchased" name="date_purchased"
+                                           value="<%= item.date_purchased ? new Date(item.date_purchased.getTime() - item.date_purchased.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '' %>">
+                                </div>
+                            </div>
+
+                            <div class="form-check form-switch mb-2">
+                                <input type="hidden" name="is_graded" value="0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="is_graded" name="is_graded" value="1"
+                                       <%= item.is_graded ? 'checked' : '' %>>
+                                <label class="form-check-label" for="is_graded">Graded (slabbed)</label>
+                            </div>
+
+                            <div id="grading-fields" class="row <%= item.is_graded ? '' : 'd-none' %>">
+                                <div class="col-md-4 mb-3">
+                                    <label for="grade_company" class="form-label">Grading company</label>
+                                    <select class="form-select" id="grade_company" name="grade_company">
+                                        <option value="">Select…</option>
+                                        <% gradeCompanies.forEach(c => { %>
+                                        <option value="<%= c %>" <%= item.grade_company === c ? 'selected' : '' %>><%= c %></option>
+                                        <% }) %>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="grade_value" class="form-label">Grade</label>
+                                    <input type="text" class="form-control" id="grade_value" name="grade_value"
+                                           maxlength="10" placeholder="e.g. 10, 9.5" inputmode="decimal"
+                                           value="<%= item.grade_value || '' %>">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="cert_number" class="form-label">Cert #</label>
+                                    <input type="text" class="form-control" id="cert_number" name="cert_number"
+                                           maxlength="50" value="<%= item.cert_number || '' %>">
+                                </div>
+                            </div>
+                        </fieldset>
+
                         <div class="mb-3">
                             <label for="notes" class="form-label">Notes</label>
                             <textarea class="form-control" id="notes" name="notes" rows="3"><%= item.notes || '' %></textarea>
@@ -80,5 +152,14 @@
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('is_graded').addEventListener('change', e => {
+    document.getElementById('grading-fields').classList.toggle('d-none', !e.target.checked);
+});
+document.getElementById('status').addEventListener('change', e => {
+    document.getElementById('owned-details').classList.toggle('d-none', e.target.value === 'want');
+});
+</script>
 
 <%- include('../partials/footer') %>
